@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>BillLens AI — Understand Any Bill</title>
+<meta name="description" content="BillLens turns confusing electricity, internet, phone and service bills into a clear, plain-language breakdown. 100% local demo — your bill text never leaves the browser." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230e5fe4'/%3E%3Cpath d='M27 14a13 13 0 1 0 0 26 13 13 0 0 0 0-26zM22 27h10M34 34l9 9' stroke='white' stroke-width='5' stroke-linecap='round' fill='none'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ============================= TOKENS ============================= */
+:root{
+  --bg:#f3f5f9;
+  --surface:#ffffff;
+  --surface-2:#f8fafc;
+  --border:#e5e9f0;
+  --border-strong:#d4dae4;
+  --text:#0f172a;
+  --muted:#5b6b7f;
+  --faint:#8b98aa;
+  --primary:#0e5fe4;
+  --primary-hover:#0b4fc0;
+  --primary-soft:#e9f0fe;
+  --good:#0d8050;
+  --good-soft:#e6f5ee;
+  --warn:#b45309;
+  --warn-soft:#fdf3e3;
+  --bad:#c62828;
+  --bad-soft:#fdecec;
+  --info:#0369a1;
+  --info-soft:#e6f4fb;
+  --violet:#6d5ce7;
+  --teal:#0d9488;
+  --amber:#d97706;
+  --rose:#e11d48;
+  --slate:#64748b;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow-md:0 4px 14px -4px rgba(16,24,40,.10);
+  --shadow-lg:0 18px 45px -18px rgba(16,24,40,.28);
+  --r-sm:6px; --r-md:10px; --r-lg:14px;
+  --font:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;
+}
+/* ============================= BASE ============================= */
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:var(--font);font-size:14.5px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit}
+:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:4px}
+::selection{background:#c8dcff}
+.mono{font-family:var(--mono);font-size:.86em;font-variant-numeric:tabular-nums}
+.sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+.skip-link{position:absolute;left:12px;top:-48px;z-index:100;background:var(--primary);color:#fff;padding:8px 14px;border-radius:0 0 8px 8px;text-decoration:none;transition:top .18s}
+.skip-link:focus{top:0}
+.wrap{max-width:1220px;margin:0 auto;padding:0 22px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+/* ============================= TOPBAR ============================= */
+.topbar{
+  position:sticky;top:0;z-index:50;background:rgba(255,255,255,.92);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--border);
+}
+.topbar-inner{display:flex;align-items:center;gap:14px;height:60px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.brand-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(160deg,#1a6dff,#0b47b3);display:grid;place-items:center;color:#fff;flex:none;box-shadow:var(--shadow-sm)}
+.brand-name{font-weight:800;font-size:16px;letter-spacing:-.02em}
+.brand-tag{font-size:10.5px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:-2px}
+.nav{display:flex;gap:2px;margin-left:14px}
+.nav-item{
+  appearance:none;border:0;background:transparent;color:var(--muted);cursor:pointer;
+  padding:8px 13px;border-radius:8px;font-weight:600;font-size:13.5px;position:relative;
+  transition:background .15s,color .15s;display:flex;align-items:center;gap:7px;
+}
+.nav-item:hover{background:#eef1f6;color:var(--text)}
+.nav-item.active{color:var(--primary);background:var(--primary-soft)}
+.nav-badge{min-width:18px;height:18px;border-radius:9px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;display:inline-grid;place-items:center;padding:0 5px}
+.nav-badge.zero{background:#c3ccd8}
+.top-actions{margin-left:auto;display:flex;align-items:center;gap:10px}
+.privacy-pill{
+  display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--good);
+  background:var(--good-soft);border:1px solid #cdeadb;padding:5px 11px;border-radius:999px;cursor:pointer;
+}
+.privacy-pill:hover{background:#d9efe4}
+@media (max-width:920px){.privacy-pill span.txt{display:none}.brand-tag-wrap{display:none}}
+@media (max-width:640px){
+  .nav-label{display:none}
+  .nav-item{padding:8px 11px}
+  .topbar-inner{gap:6px}
+}
+/* ============================= BUTTONS ============================= */
+.btn{
+  appearance:none;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  border-radius:9px;font-weight:600;font-size:13.5px;cursor:pointer;text-decoration:none;
+  padding:9px 16px;border:1px solid transparent;transition:background .15s,border-color .15s,color .15s,transform .06s,box-shadow .15s;
+  white-space:nowrap;
+}
+.btn:active{transform:translateY(1px)}
+.btn-primary{background:var(--primary);color:#fff;box-shadow:0 1px 2px rgba(14,95,228,.35)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:#fff;color:var(--text);border-color:var(--border-strong);box-shadow:var(--shadow-sm)}
+.btn-secondary:hover{background:var(--surface-2);border-color:#bcc6d4}
+.btn-danger{background:#fff;color:var(--bad);border-color:#f0c9c9}
+.btn-danger:hover{background:var(--bad-soft)}
+.btn-ghost{background:transparent;color:var(--muted)}
+.btn-ghost:hover{background:#eef1f6;color:var(--text)}
+.btn-sm{padding:6px 11px;font-size:12.5px;border-radius:8px}
+.btn-lg{padding:12px 22px;font-size:15px;border-radius:11px}
+.btn[disabled]{opacity:.55;pointer-events:none}
+.btn svg{flex:none}
+/* ============================= LAYOUT / VIEWS ============================= */
+main{padding:26px 0 60px}
+.view{display:none;animation:viewIn .28s ease both}
+.view.active{display:block}
+@keyframes viewIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.page-title{font-size:21px;font-weight:800;letter-spacing:-.025em;margin:0}
+.page-sub{color:var(--muted);font-size:13.5px;margin:3px 0 0}
+.head-actions{display:flex;gap:9px;flex-wrap:wrap}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);
+  box-shadow:var(--shadow-sm);padding:18px 20px;
+}
+.card + .card{margin-top:16px}
+.card-title{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);margin:0 0 12px}
+.grid{display:grid;gap:16px}
+.dash-grid{grid-template-columns:minmax(0,1.7fr) minmax(0,1fr)}
+@media (max-width:980px){.dash-grid{grid-template-columns:1fr}}
+.charts-row{grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+@media (max-width:980px){.charts-row{grid-template-columns:1fr}}
+.split-2{grid-template-columns:1fr 1fr}
+@media (max-width:760px){.split-2{grid-template-columns:1fr}}
+/* ============================= HERO CARD ============================= */
+.hero{
+  background:linear-gradient(180deg,#ffffff 0%,#fbfcfe 100%);
+  border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-sm);
+  padding:22px 24px;position:relative;overflow:hidden;
+}
+.hero::after{content:"";position:absolute;inset:0 0 auto auto;width:220px;height:220px;border-radius:50%;
+  background:radial-gradient(circle at center,rgba(14,95,228,.06),transparent 65%);pointer-events:none}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.provider-line{display:flex;align-items:center;gap:11px}
+.provider-logo{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:15px;color:#fff;flex:none}
+.provider-name{font-weight:700;font-size:15px;letter-spacing:-.01em}
+.provider-meta{font-size:12.5px;color:var(--muted)}
+.hero-amount{display:flex;align-items:baseline;gap:12px;margin:16px 0 4px;flex-wrap:wrap}
+.hero-total{font-size:40px;font-weight:800;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1.05}
+.hero-due{margin-left:auto;text-align:right;font-size:12.5px;color:var(--muted)}
+.hero-due b{color:var(--text);font-weight:700}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;
+  padding:3px 10px;border-radius:999px;border:1px solid transparent;letter-spacing:.01em;white-space:nowrap;
+}
+.badge.up{background:var(--bad-soft);color:var(--bad);border-color:#f3cdcd}
+.badge.down{background:var(--good-soft);color:var(--good);border-color:#cdeadb}
+.badge.flat{background:#eef1f5;color:var(--slate);border-color:#dde3ea}
+.badge.warn{background:var(--warn-soft);color:var(--warn);border-color:#f2ddbd}
+.badge.info{background:var(--info-soft);color:var(--info);border-color:#c9e6f6}
+.badge.neutral{background:#eef1f5;color:var(--slate);border-color:#dde3ea}
+.badge.fact{background:#eef4ff;color:#1d4ed8;border-color:#d3e2fd}
+.badge.suggest{background:#f3ecfe;color:#6d28d9;border-color:#e2d5fb}
+.hero-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:18px}
+@media (max-width:720px){.hero-stats{grid-template-columns:repeat(2,1fr)}}
+.stat{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 13px}
+.stat-label{font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.05em;display:flex;align-items:center;gap:5px}
+.stat-value{font-size:16.5px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.01em;margin-top:2px}
+.stat-note{font-size:11.5px;color:var(--muted)}
+.status-strip{display:flex;align-items:center;gap:10px;margin-top:16px;padding:11px 14px;border-radius:var(--r-md);font-size:13px;font-weight:500}
+.status-strip.good{background:var(--good-soft);color:#0a5c3b;border:1px solid #d2ecdf}
+.status-strip.warn{background:var(--warn-soft);color:#7c4a06;border:1px solid #f2ddbd}
+.status-strip.bad{background:var(--bad-soft);color:#9c1f1f;border:1px solid #f3cdcd}
+.status-strip svg{flex:none}
+/* ============================= WHAT CHANGED ============================= */
+.change-summary{
+  display:flex;gap:11px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);
+  border-left:3px solid var(--primary);border-radius:var(--r-md);padding:13px 15px;font-size:13.5px;color:#243b5e;
+  box-shadow:var(--shadow-sm);
+}
+.change-summary ul{margin:6px 0 0;padding-left:18px}
+.change-summary li{margin:3px 0}
+.change-list{list-style:none;margin:10px 0 0;padding:0}
+.change-list li{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 2px;border-bottom:1px dashed var(--border);font-size:13.5px}
+.change-list li:last-child{border-bottom:0}
+.cl-name{display:flex;align-items:center;gap:8px;min-width:0}
+.cl-name .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.delta-up{color:var(--bad);font-weight:700;font-variant-numeric:tabular-nums}
+.delta-down{color:var(--good);font-weight:700;font-variant-numeric:tabular-nums}
+.tag-new{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--violet);background:#f1ecfe;border:1px solid #e0d5fb;border-radius:5px;padding:1px 6px;text-transform:uppercase}
+.tag-gone{font-size:10px;font-weight:800;letter-spacing:.06em;color:var(--slate);background:#eef1f5;border:1px solid #dde3ea;border-radius:5px;padding:1px 6px;text-transform:uppercase}
+.mini-chart-bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:6px}
+.mc-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.mc-fill{width:100%;max-width:44px;border-radius:6px 6px 2px 2px;background:#dbe4f3;transition:height .6s cubic-bezier(.2,.8,.3,1);position:relative}
+.mc-bar.current .mc-fill{background:var(--primary)}
+.mc-bar:hover .mc-fill{filter:brightness(.94)}
+.mc-label{font-size:10.5px;color:var(--faint);font-weight:600;white-space:nowrap}
+.mc-val{font-size:10.5px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+/* ============================= ANALYZE VIEW ============================= */
+.analyze-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:16px;align-items:start}
+@media (max-width:980px){.analyze-grid{grid-template-columns:1fr}}
+textarea#billInput{
+  width:100%;min-height:380px;resize:vertical;font-family:var(--mono);font-size:12.5px;line-height:1.65;
+  color:#243347;background:#fbfcfe;border:1.5px solid var(--border-strong);border-radius:var(--r-md);padding:14px 16px;
+  transition:border-color .15s, box-shadow .15s;
+}
+textarea#billInput:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(14,95,228,.14);background:#fff}
+.sample-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chip{
+  appearance:none;border:1px solid var(--border-strong);background:#fff;border-radius:999px;padding:6px 13px;
+  font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+  transition:all .15s;
+}
+.chip:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-soft)}
+.chip .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.input-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.char-count{font-size:12px;color:var(--faint)}
+.privacy-note{
+  display:flex;gap:9px;align-items:flex-start;font-size:12px;color:var(--muted);line-height:1.5;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px;margin-top:12px;
+}
+.privacy-note svg{flex:none;color:var(--good);margin-top:1px}
+/* processing */
+.processing{padding:26px 24px}
+.proc-steps{list-style:none;margin:14px 0 0;padding:0;max-width:460px}
+.proc-step{display:flex;align-items:center;gap:11px;padding:9px 0;color:var(--faint);font-size:13.5px;font-weight:500;transition:color .25s}
+.proc-step .picon{width:22px;height:22px;border-radius:50%;border:2px solid #d7dee8;display:grid;place-items:center;flex:none;transition:all .25s;color:#b6c1cf}
+.proc-step.doing{color:var(--text)}
+.proc-step.doing .picon{border-color:var(--primary);color:var(--primary)}
+.proc-step.done{color:var(--muted)}
+.proc-step.done .picon{border-color:var(--good);background:var(--good);color:#fff}
+.spinner{width:14px;height:14px;border-radius:50%;border:2px solid #cfd9ea;border-top-color:var(--primary);animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proc-bar{height:6px;border-radius:3px;background:#e8ecf3;overflow:hidden;margin-top:18px}
+.proc-bar > div{height:100%;width:0;background:linear-gradient(90deg,var(--primary),#5b9bff);border-radius:3px;transition:width .3s ease}
+/* results */
+.results-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.tabs{display:flex;gap:4px;background:#e9edf4;padding:4px;border-radius:11px;flex-wrap:wrap}
+.tab{
+  appearance:none;border:0;background:transparent;padding:7px 14px;border-radius:8px;font-weight:600;font-size:13px;
+  color:var(--muted);cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:7px;
+}
+.tab:hover{color:var(--text)}
+.tab.active{background:#fff;color:var(--text);box-shadow:var(--shadow-sm)}
+.tab-panel{display:none;animation:viewIn .25s ease both}
+.tab-panel.active{display:block}
+/* tables */
+.table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--r-md)}
+table.lines{width:100%;border-collapse:collapse;font-size:13.5px;min-width:560px}
+table.lines th{
+  text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);
+  background:var(--surface-2);padding:9px 14px;border-bottom:1px solid var(--border);font-weight:700;white-space:nowrap;
+}
+table.lines td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+table.lines tr:last-child td{border-bottom:0}
+table.lines tbody tr:hover{background:#f7f9fc}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.li-name{font-weight:600}
+.li-sub{font-size:11.5px;color:var(--faint)}
+.cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px}
+.pct-cell{color:var(--muted);font-size:12.5px}
+.bar-track{height:5px;border-radius:3px;background:#edf0f5;overflow:hidden;min-width:70px}
+.bar-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.2,.8,.3,1)}
+.totals-row td{background:var(--surface-2);font-weight:800;border-top:2px solid var(--border-strong)}
+.neg{color:var(--good)}
+/* donut */
+.donut-wrap{display:flex;align-items:center;gap:26px;flex-wrap:wrap}
+.donut{width:190px;height:190px;flex:none}
+.donut circle{transition:stroke-dashoffset .8s cubic-bezier(.2,.8,.3,1)}
+.legend{list-style:none;margin:0;padding:0;flex:1;min-width:200px}
+.legend li{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px dashed var(--border);font-size:13px}
+.legend li:last-child{border-bottom:0}
+.legend .lg-name{font-weight:600;flex:1;min-width:0}
+.legend .lg-amt{font-variant-numeric:tabular-nums;color:var(--muted)}
+.legend .lg-pct{font-weight:700;width:46px;text-align:right;font-variant-numeric:tabular-nums}
+/* anomalies */
+.anomaly{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);padding:14px 16px;margin-bottom:12px;
+  transition:box-shadow .15s;
+}
+.anomaly:hover{box-shadow:var(--shadow-md)}
+.anomaly.high{border-left:4px solid var(--bad)}
+.anomaly.medium{border-left:4px solid var(--amber)}
+.anomaly.low{border-left:4px solid var(--slate)}
+.an-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.an-title{font-weight:700;font-size:14px;letter-spacing:-.01em}
+.an-type{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--faint)}
+.sev{margin-left:auto}
+.an-body{margin-top:8px;font-size:13.5px;color:#334155}
+.an-body .why{display:block}
+.an-body .why b,.an-suggest b{font-weight:700;color:var(--text)}
+.an-facts{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.an-facts li{font-size:11.5px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--muted);font-variant-numeric:tabular-nums}
+.an-suggest{margin-top:9px;padding:9px 12px;background:#f6f4ff;border:1px solid #e6e0fb;border-radius:8px;font-size:13px;color:#3d2f70}
+.empty-state{text-align:center;padding:34px 18px;color:var(--muted)}
+.empty-state .es-icon{width:44px;height:44px;border-radius:50%;background:var(--good-soft);color:var(--good);display:grid;place-items:center;margin:0 auto 10px}
+/* checklist */
+.check-progress{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.check-progress .bar-track{flex:1;height:8px}
+.check-progress .bar-fill{background:linear-gradient(90deg,var(--good),#3ecf8e)}
+.check-group{margin-bottom:16px}
+.check-group h4{margin:0 0 8px;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--faint);display:flex;align-items:center;gap:8px}
+.check-group h4 .count{font-weight:600;text-transform:none;letter-spacing:0;color:var(--muted);font-size:11px}
+.check-item{
+  display:flex;gap:11px;align-items:flex-start;padding:10px 12px;border:1px solid var(--border);border-radius:9px;
+  margin-bottom:7px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;
+}
+.check-item:hover{border-color:var(--border-strong);background:var(--surface-2)}
+.check-item input{appearance:none;width:18px;height:18px;border:1.5px solid var(--border-strong);border-radius:5px;flex:none;margin:2px 0 0;cursor:pointer;position:relative;background:#fff;transition:all .15s}
+.check-item input:checked{background:var(--good);border-color:var(--good)}
+.check-item input:checked::after{content:"";position:absolute;left:5px;top:1.5px;width:5px;height:10px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(42deg)}
+.check-item input:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.check-item.done .ci-text{color:var(--faint);text-decoration:line-through}
+.ci-text{font-size:13.5px;line-height:1.5}
+.ci-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:2px}
+/* history */
+.hist-table td:first-child{font-weight:600}
+.hist-row{cursor:pointer;transition:background .12s}
+.hist-row:hover{background:#f2f6fd !important}
+.hist-row.selected{background:var(--primary-soft) !important;box-shadow:inset 3px 0 0 var(--primary)}
+.spark-wrap{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.spark{width:100%;max-width:520px;height:150px}
+.hist-detail{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px}
+.hd-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--r-md);padding:11px 13px}
+.hd-label{font-size:11px;color:var(--faint);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.hd-value{font-size:17px;font-weight:750;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+/* raw modal */
+.raw-toggle{margin-top:14px}
+.raw-box{display:none;margin-top:10px;background:#0f172a;color:#cbd5e1;border-radius:var(--r-md);padding:16px;font-family:var(--mono);font-size:11.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:340px;overflow:auto}
+.raw-box.open{display:block;animation:viewIn .2s ease both}
+/* toasts */
+.toasts{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:9px;align-items:center;pointer-events:none;width:min(92vw,460px)}
+.toast{
+  pointer-events:auto;background:#101828;color:#f2f5fa;border-radius:10px;padding:11px 16px;font-size:13.5px;font-weight:500;
+  box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:10px;animation:toastIn .28s cubic-bezier(.2,.9,.3,1.2) both;
+  max-width:100%;
+}
+.toast.out{animation:toastOut .25s ease forwards}
+.toast .ticon{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;flex:none}
+.toast.success .ticon{background:#16a34a;color:#fff}
+.toast.error .ticon{background:#dc2626;color:#fff}
+.toast.info .ticon{background:#2563eb;color:#fff}
+@keyframes toastIn{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes toastOut{to{opacity:0;transform:translateY(10px) scale(.97)}}
+/* footer */
+footer{border-top:1px solid var(--border);background:#fff;padding:20px 0 26px;margin-top:20px}
+.foot-inner{display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted)}
+.foot-inner a{color:var(--primary);text-decoration:none;font-weight:600}
+.foot-inner a:hover{text-decoration:underline}
+/* print button hidden on small screens via CSS */
+@media (max-width:640px){.print-only-btn{display:none}}
+/* ============================= PRINT ============================= */
+#printReport{display:none}
+@media print{
+  @page{margin:14mm}
+  body{background:#fff;font-size:11pt}
+  .topbar,main,footer,.toasts,#printRoot{display:none !important}
+  #printReport{display:block;color:#000}
+  #printReport h1{font-size:17pt;margin:0 0 2px}
+  #printReport .pr-meta{color:#444;font-size:9.5pt;margin-bottom:14pt}
+  #printReport section{margin-bottom:14pt;page-break-inside:avoid}
+  #printReport h2{font-size:11.5pt;text-transform:uppercase;letter-spacing:.05em;color:#333;border-bottom:1.5px solid #333;padding-bottom:4px;margin:0 0 8px}
+  #printReport table{width:100%;border-collapse:collapse;font-size:10pt}
+  #printReport th,#printReport td{border:1px solid #bbb;padding:5px 8px;text-align:left}
+  #printReport th{background:#eee}
+  #printReport td.num{text-align:right}
+  #printReport ul{margin:4px 0;padding-left:20px}
+  #printReport li{margin:3px 0}
+  #printReport .pr-foot{font-size:9pt;color:#666;border-top:1px solid #bbb;padding-top:8px;margin-top:10pt}
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#" id="brandLink" aria-label="BillLens AI home">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M8 10.5h5"/></svg>
+      </span>
+      <span>
+        <span class="brand-name">BillLens<span style="color:var(--primary)"> AI</span></span><br/>
+        <span class="brand-tag brand-tag-wrap">Understand any bill</span>
+      </span>
+    </a>
+    <nav class="nav" aria-label="Primary">
+      <button class="nav-item active" data-view="dashboard" aria-current="page">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="nav-label">Dashboard</span>
+      </button>
+      <button class="nav-item" data-view="analyze">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.6 5.6l2.1 2.1m8.6 8.6 2.1 2.1m0-12.8-2.1 2.1M7.7 16.3l-2.1 2.1"/><circle cx="12" cy="12" r="3.2"/></svg>
+        <span class="nav-label">Analyze a Bill</span>
+      </button>
+      <button class="nav-item" data-view="history">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 8v4l3 2"/></svg>
+        <span class="nav-label">History</span>
+      </button>
+    </nav>
+    <div class="top-actions">
+      <button class="privacy-pill" id="privacyPill" title="How your data is handled in this demo">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+        <span class="txt">Processed locally</span>
+      </button>
+      <button class="btn btn-primary btn-sm" id="navAnalyzeBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Analyze a Bill
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+  <div class="wrap">
+
+    <!-- ============ DASHBOARD ============ -->
+    <section class="view active" id="view-dashboard" aria-labelledby="dashTitle">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="dashTitle">Bill Dashboard</h1>
+          <p class="page-sub" id="dashSub">Your latest analyzed bill, explained.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-secondary" id="dashCopyBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy Summary
+          </button>
+          <button class="btn btn-secondary" id="dashPrintBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>
+            Print Report
+          </button>
+          <button class="btn btn-primary" id="dashAnalyzeBtn">Analyze a New Bill</button>
+        </div>
+      </div>
+      <div id="dashEmpty"></div>
+      <div id="dashContent" hidden></div>
+    </section>
+
+    <!-- ============ ANALYZE ============ -->
+    <section class="view" id="view-analyze" aria-labelledby="anTitle">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="anTitle">Analyze a Bill</h1>
+          <p class="page-sub">Paste the raw text from any statement — we’ll turn it into a plain-language breakdown.</p>
+        </div>
+      </div>
+      <div id="analyzeBody"></div>
+    </section>
+
+    <!-- ============ HISTORY ============ -->
+    <section class="view" id="view-history" aria-labelledby="histTitle">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title" id="histTitle">Bill History</h1>
+          <p class="page-sub">Sample account history across recent cycles. Select a month to compare totals and categories.</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn btn-secondary" id="histBackToDash">View current dashboard</button>
+        </div>
+      </div>
+      <div id="historyBody"></div>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="wrap foot-inner">
+    <span><strong>BillLens AI</strong> — demo product with fictional sample data. Not affiliated with any real utility or provider.</span>
+    <span>Analysis runs entirely in your browser · <a href="#" id="footPrivacy">Privacy note</a></span>
+  </div>
+</footer>
+
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<div id="printReport" aria-hidden="true"></div>
+
+<script>
+"use strict";
+/* ================================================================
+   BillLens AI — self-contained bill analyzer
+   All analysis is local, rule-based pattern matching over the
+   pasted bill text. No external services are called.
+================================================================ */
+(function(){
+
+/* ---------------------------- utils ---------------------------- */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const money = n => (n<0?"−$":"$") + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const moneyShort = n => (n<0?"−$":"$") + Math.abs(n).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+const pctFmt = p => (p>0?"+":"") + p.toFixed(1).replace(/\.0$/,"") + "%";
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const STOPWORDS = new Set(["the","of","and","for","a","an","to","in","on","per","fee","tax","charge","service"]);
+function keywordOverlap(a,b){
+  const setA=new Set(normName(a).split(" ").filter(w=>w.length>2&&!STOPWORDS.has(w)));
+  const wordsB=normName(b).split(" ").filter(w=>w.length>2&&!STOPWORDS.has(w));
+  if (!setA.size||!wordsB.length) return 0;
+  let hits=0; wordsB.forEach(w=>{ if(setA.has(w)) hits++; });
+  return hits/Math.min(setA.size,wordsB.length);
+}
+function hasSimilarLine(lines,name,minValue){
+  return lines.some(l=>Math.abs(l.value)>=(minValue||0.01)&&Math.sign(l.value)===Math.sign(minValue!=null?minValue:l.value)&&keywordOverlap(l.name,name)>=0.45);
+}
+const uid = (()=>{let i=0;return()=>"id"+(++i)})();
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function parseNum(s){ if(s==null) return null; const n=parseFloat(String(s).replace(/[$,%\s,]/g,"")); return isNaN(n)?null:n; }
+function fmtDate(d){ return d.toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"}); }
+function addDays(d,n){ const x=new Date(d.getTime()); x.setDate(x.getDate()+n); return x; }
+function daysUntil(d){ return Math.ceil((d - new Date(new Date().toDateString()))/86400000); }
+function debounce(fn,ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+function normName(s){ return String(s).toLowerCase().replace(/&amp;/g,"&").replace(/[^a-z0-9]+/g," ").trim(); }
+
+/* ------------------------- category model ------------------------- */
+const CATS = {
+  usage:     {label:"Usage & charges",     color:"#0e5fe4"},
+  recurring: {label:"Recurring plan fees", color:"#6d5ce7"},
+  equipment: {label:"Equipment & rental",  color:"#0d9488"},
+  taxes:     {label:"Taxes & government",  color:"#d97706"},
+  fees:      {label:"Fees & adjustments",  color:"#e11d48"},
+  discount:  {label:"Credits & discounts", color:"#0d8050"},
+};
+const CAT_ORDER = ["usage","recurring","equipment","taxes","fees"];
+const RULES = [
+  [/autopay|paperless|loyalty|senior discount|employee|bundle|plan credit|account credit|credit adjustment|service credit|hardship|seasonal rate|waiv|promo/i, "discount"],
+  [/tax|fee|surcharge|regulat|franchis|municipal|gross receipts|state admin|utility receipt|gross revenue|911|universal service|environment compliance|pollution control|storm ?water|sewer/i, "taxes"],
+  [/equip|modem|router|lease|rental|set.?top|box fee|stick/i, "equipment"],
+  [/late|overdue|returned|reconnect|disconnect|deposit|installation|install|trip charge|meter reader|collection|insufficient payment/i, "fees"],
+  [/base|basic|access charge|monthly|subscription|plan|service charge|line access|channel|premium|standard package|programming|membership|platform|support plan|protection/i, "recurring"],
+];
+function categorize(name){
+  for (const [re,cat] of RULES) if (re.test(name)) return cat;
+  return "usage";
+}
+const CAT_ICON = {
+  usage:'<path d="M13 2 4.5 13.5H11L9.5 22 18 10.5h-6.5z"/>',
+  recurring:'<path d="M12 3v18M17 6.5c-1-1.6-2.8-2.5-5-2.5-2.8 0-5 1.6-5 3.8C7 11 12 10 12 13.5c0 2.2-2.2 3.5-5 3.5-2.4 0-4.3-1-5.2-2.7"/>',
+  equipment:'<rect x="3" y="5" width="18" height="11" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  taxes:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+  fees:'<circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.5v.5"/>',
+  discount:'<path d="M20 12 12 20 4 12V4h8z"/><circle cx="9" cy="9" r="1.6"/>',
+};
+function catIcon(cat,size=14){ return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="color:'+CATS[cat].color+'">'+CAT_ICON[cat]+'</svg>'; }
+
+/* --------------------------- sample bills --------------------------- */
+const SAMPLE_ELECTRICITY = `NORTHLIGHT ELECTRIC COMPANY
+Service Account 4821-7734-09   |   Account Holder: A. RIVERA
+BILL SUMMARY
+Billing Period: May 1 - May 31, 2026
+Statement Date: June 1, 2026
+Due Date: June 15, 2026
+Previous Balance: $0.00
+New Balance Due: $127.84
+
+USAGE DETAIL
+Previous Reading: 41,208 kWh
+Current Reading:  42,106 kWh
+Usage This Period: 898 kWh
+
+LINE ITEMS
+Base Service Charge ......................... $22.50
+Distribution Charge (898 kWh @ $0.0420) ..... $37.72
+Energy Supply Charge (898 kWh @ $0.0585) .... $52.53
+Renewable Energy Program Fee ................ $3.14
+State Regulatory Assessment ................. $1.89
+Franchise Fee (City of Fairview) ............ $2.67
+Municipal Utility Tax (3.1%) ................ $4.41
+Gross Receipts Tax .......................... $1.48
+Paperless & Autopay Credit .............. -$1.50
+
+TOTAL AMOUNT DUE  $127.84
+Pay by June 15 to avoid a late payment fee of $12.00.`;
+
+const SAMPLE_INTERNET = `WAVEPOINT BROADBAND — MONTHLY STATEMENT
+Account: WP-5521-8840   Customer: J. OKONKWO
+Billing Period: May 3 - June 2, 2026
+Statement Date: June 1, 2026
+Payment Due: June 18, 2026
+
+CHARGES
+Fiber 500 Plan (Monthly Service) ............ $55.00
+WiFi 6 Router Rental ........................ $14.00
+Premium Channel Pack ........................ $12.99
+Installation Fee (one-time) ................. $60.00
+Broadcast TV Surcharge ...................... $4.20
+Regulatory Recovery Fee ..................... $3.45
+Federal Universal Service Fee (FUSF) ........ $1.87
+State Communications Tax (5.0%) ............. $4.95
+Local Franchise Fee ......................... $2.10
+Autopay & Paperless Discount (Monthly) .... -$5.00
+
+TOTAL DUE  $163.56
+Thanks for choosing WavePoint!`;
+
+const SAMPLE_MOBILE = `MERIDIAN WIRELESS — BILL STATEMENT
+Line Account 7701-2245   Subscriber: S. PATEL
+Billing Period: May 10 - June 9, 2026
+Statement Date: June 10, 2026
+Due Date: June 28, 2026
+
+PLAN & FEATURES
+Unlimited Talk & Text Plan .................. $45.00
+Device Payment Installment (Phone 8 Pro) .... $24.92
+Number Protection ........................... $7.99
+International Roaming Add-On ................ $12.00
+
+USAGE
+Data Usage Above 50 GB (18 GB @ $10.00) ..... $180.00
+International Calls (Canada, 42 min) ........ $8.40
+
+FEES, TAXES & CREDITS
+911 Service Fee ............................. $0.79
+Universal Service Fund Fee .................. $1.66
+Environmental Compliance Charge ............. $1.35
+State Sales Tax (6.25%) ..................... $17.42
+County Telecom Surcharge .................... $2.10
+Loyalty Discount (Monthly, 2 years) ....... -$5.00
+
+BALANCE DUE  $261.63
+Overpay/underpay may result in a returned payment fee of $25.00.`;
+
+const SAMPLES = [
+  { key:"electricity", name:"Northlight Electric", type:"Electricity", color:"#d97706", text:SAMPLE_ELECTRICITY },
+  { key:"internet",    name:"WavePoint Broadband", type:"Internet",    color:"#6d5ce7", text:SAMPLE_INTERNET },
+  { key:"mobile",      name:"Meridian Wireless",   type:"Mobile",      color:"#0d9488", text:SAMPLE_MOBILE },
+];
+
+/* ------------------------- parser configuration ------------------------- */
+const META_PATTERNS = [
+  { key:"period", re:/billing period[:\s]+([^\n\r]+)/i },
+  { key:"period", re:/period of service[:\s]+([^\n\r]+)/i },
+  { key:"statement", re:/statement date[:\s]+([^\n\r]+)/i },
+  { key:"due", re:/due date[:\s]+([^\n\r]+)/i },
+  { key:"due", re:/payment due(?: date)?[:\s]+([^\n\r]+)/i },
+  { key:"due", re:/pay (?:by|on)[:\s]+([a-z]+ \d{1,2}(?:st|nd|rd|th)?(?:,? \d{4})?)/i },
+  { key:"account", re:/(?:service account|account(?: number)?|line account)[:\s#]*([A-Za-z0-9][A-Za-z0-9\-\/ ]{3,22}?)(?=\s*(?:\||$|\s{2,}|[A-Z]{2,}\b))/im },
+  { key:"holder", re:/(?:account holder|customer|subscriber)[:\s]+([^\n\r|]+)/i },
+  { key:"prevBalance", re:/previous balance[:\s]+\$?([\d,]+(?:\.\d{1,2})?)/i },
+  { key:"total", re:/(?:new balance due|balance due|total amount due|total due|amount due)[:\s]+\$?([\d,]+(?:\.\d{1,2})?)/i },
+  { key:"prevRead", re:/previous reading[:\s]+([\d,]+(?:\.\d+)?)\s*([a-z%]{1,6})/i },
+  { key:"currRead", re:/current reading[:\s]+([\d,]+(?:\.\d+)?)\s*([a-z%]{1,6})/i },
+  { key:"usage", re:/usage this period[:\s]+([\d,]+(?:\.\d+)?)\s*([a-z%]{1,6})/i },
+];
+const SECTION_WORDS = /^(usage(?: detail)?|usage summary|charges?|fees?(?:[, ]+taxes)?(?:[, ]+credits?)?|taxes(?: and fees)?|adjustments|summary|totals?|payment summary|important dates|messages?|notes?|your payment|remittance)\b/i;
+/* a line is only treated as a section heading if it contains no price */
+const HEADING_LINE = t => SECTION_WORDS.test(t) && !/\$\s?\d/.test(t);
+/* any ALL-CAPS line (with letters) starts a new block — common in real statements */
+const ALLCAPS = t => /[A-Z]{3}/.test(t) && t === t.toUpperCase();
+const SKIP_LINE = /(previous balance|statement date|billing period|period of service|due date|payment due|pay by|balance due|amount due|total amount|new total|thanks for|please pay|if you have questions|questions\?|call us|visit us|www\.|https?:\/\/|\bp\.?s?[oc]\b.*\d{5}|overpay\/underpay|avoid a late)/i;
+const DOTLEAD = /^(.*?)\s*\.{2,}[\s•·–—-]*\$?(-?[\d,]+(?:\.\d{1,2})?)\s*$/;
+const LEADNUM = /^\(?\$?(-?[\d,]+(?:\.\d{1,2})?)\)?\s+(.+)$/;
+const TRAILNUM = /^(.+?)\s*[:\-–—]\s*\$?(-?[\d,]+(?:\.\d{1,2})?)\s*$/;
+/* name followed by 2+ spaces and a price at end of line (PDF-style alignment) */
+const SPACEALIGN = /^([A-Za-z][^\n]*[a-z%)]\S)\s{2,}\(?\$?(-?[\d,]+(?:\.\d{1,2})?)\)?\s*$/;
+const UNITPRICE = /\$\s?([\d.]+)\s*(?:\/|per\s+)\s*([a-z%]{1,6})/i;
+const QTYUNIT = /\(([\d,]+(?:\.\d+)?)\s*([a-z%]{1,6})\s*@\s*\$?([\d.,]+)\)/i;
+
+function parseBill(text){
+  const meta = {};
+  for (const p of META_PATTERNS){
+    if (meta[p.key]) continue;
+    const m = text.match(p.re);
+    if (m) meta[p.key] = m[1].trim();
+  }
+  const lines = [];
+  const rawLines = text.split(/\r?\n/);
+  let inSection = false;
+  for (const raw of rawLines){
+    const line = raw.trim();
+    if (!line) { continue; }
+    /* extract amount first — headings must never contain a price */
+    let name=null, value=null;
+    let m = line.match(DOTLEAD);
+    if (m){ name=m[1]; value=parseNum(m[2]); }
+    else { m = line.match(LEADNUM);
+      if (m){ value=parseNum(m[1]); name=m[2]; }
+      else { m = line.match(TRAILNUM);
+        if (m){ name=m[1]; value=parseNum(m[2]); }
+        else { m = line.match(SPACEALIGN);
+          if (m){ name=m[1]; value=parseNum(m[2]); }
+        }
+      }
+    }
+    const isHeadingish = (name==null || value==null);
+    /* headings: explicit section words, or standalone ALL-CAPS labels without prices */
+    if (isHeadingish && (HEADING_LINE(line) || ALLCAPS(line))){
+      inSection = true; continue;
+    }
+    if (/^[-=_•*\s]+$/.test(line)) continue;
+    if (name==null || value==null){ continue; }
+    name = name.replace(/^[-•*\s]+/,"").replace(/[:\s|]+$/,"").trim();
+    if (!name || name.length > 70 || SKIP_LINE.test(name) || /^total\b/i.test(name) || !/[a-z]/i.test(name)){ continue; }
+    if (!inSection) continue; // only trust priced lines that follow a section heading
+    const qtyMatch = name.match(QTYUNIT);
+    const unitMatch = name.match(UNITPRICE);
+    let qty=null, unit=null, unitPrice=null;
+    if (qtyMatch){ qty=parseNum(qtyMatch[1]); unit=qtyMatch[2].toUpperCase(); unitPrice=parseNum(qtyMatch[3]); }
+    else if (unitMatch){ unit=unitMatch[2].toUpperCase(); unitPrice=parseNum(unitMatch[1]); if (unitPrice) qty=Math.round((value/unitPrice)*100)/100; }
+    lines.push({
+      id:uid(),
+      name: titleCase(name.replace(/\s*\([^)]*\)\s*/g," ").replace(/\s{2,}/g," ").trim()),
+      rawName:name,
+      value,
+      qty, unit, unitPrice,
+      category: value < 0 ? "discount" : categorize(name),
+    });
+  }
+  return { meta, lines };
+}
+function titleCase(s){
+  const small=["of","for","and","the","above","per"];
+  return s.toLowerCase().split(" ").map((w,i)=>{
+    if (!w) return w;
+    if (i>0 && small.includes(w)) return w;
+    if (/^[a-z]$/.test(w)) return w.toUpperCase();
+    if (/^(kwh|gb|us|ca|tv|wifi|911|fusp|fusf)$/.test(w)) return w.toUpperCase();
+    return w.charAt(0).toUpperCase()+w.slice(1);
+  }).join(" ");
+}
+function computeTotals(lines){
+  const subtotal = lines.filter(l=>l.value>0).reduce((a,l)=>a+l.value,0);
+  const taxes = lines.filter(l=>l.category==="taxes").reduce((a,l)=>a+l.value,0);
+  const fees = lines.filter(l=>["fees","equipment"].includes(l.category)).reduce((a,l)=>a+l.value,0);
+  const discounts = lines.filter(l=>l.value<0).reduce((a,l)=>a+l.value,0);
+  const total = +(subtotal + discounts).toFixed(2);
+  return { subtotal:+subtotal.toFixed(2), taxes:+taxes.toFixed(2), fees:+fees.toFixed(2), discounts:+discounts.toFixed(2), total };
+}
+function detectProvider(text){
+  const first = (text.split(/\r?\n/).find(l=>l.trim())||"").trim();
+  let name = first.split(/[—|]| - /)[0].replace(/bill statement|monthly statement|statement|invoice|#?\d.*$/gi,"").trim();
+  name = name.replace(/\s{2,}/g," ").trim();
+  if (!name || name.length < 3) name = "Your Provider";
+  const upper = name.toUpperCase();
+  const type = /ELECTR|POWER|UTILIT|GAS|WATER|ENERGY/i.test(text) ? "Electricity"
+    : /INTERNET|BROADBAND|WI-?FI|MODEM|FIBER|CABLE/i.test(text) ? "Internet"
+    : /WIRELESS|MOBILE|PHONE|WIRELINE|TELECOM|TALK|TEXT|ROAMING/i.test(text) ? "Mobile"
+    : /STREAM|SUBSCRIPTION|MEMBER|APP STORE|SAAS|LICEN[SC]E/i.test(text) ? "Subscription" : "Service";
+  return { name: toTitle(name), upper, type };
+}
+function toTitle(s){
+  return s.toLowerCase().replace(/\b[a-z]/g, c=>c.toUpperCase()).trim();
+}
+function extractDates(meta){
+  let periodStart=null, periodEnd=null, statementDate=null, dueDate=null;
+  if (meta.period){
+    const m = meta.period.match(/([A-Z][a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?\s*(?:-|–|to)\s*(?:([A-Z][a-z]+)\.?\s+)?(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{4})/i);
+    if (m){
+      const y = +m[5];
+      periodStart = new Date(y, monIdx(m[1]), +m[2]);
+      periodEnd = new Date(y, monIdx(m[3]||m[1]), +m[4]);
+    }
+  }
+  if (meta.statement) statementDate = parseFlexDate(meta.statement);
+  if (meta.due) dueDate = parseFlexDate(meta.due);
+  if (!dueDate && statementDate) dueDate = addDays(statementDate, 14);
+  if (!statementDate && periodEnd) statementDate = addDays(periodEnd, 1);
+  if (!dueDate && periodEnd) dueDate = addDays(periodEnd, 15);
+  if (!periodStart || !periodEnd){
+    const now = new Date();
+    periodEnd = new Date(now.getFullYear(), now.getMonth()-1, 0);
+    periodStart = new Date(periodEnd.getFullYear(), periodEnd.getMonth()-1, 1);
+  }
+  return { periodStart, periodEnd, statementDate, dueDate };
+}
+function monIdx(s){ return ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"].findIndex(m=>s.toLowerCase().startsWith(m)); }
+function parseFlexDate(s){
+  if (!s) return null;
+  let m = s.match(/([A-Z][a-z]+)\.?\s+(\d{1,2})(?:st|nd|rd|th)?(?:,?\s*(\d{4}))?/i);
+  if (m){ const y = m[3]?+m[3]:new Date().getFullYear(); return new Date(y, monIdx(m[1]), +m[2]); }
+  m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (m) return new Date(+m[3], +m[1]-1, +m[2]);
+  return null;
+}
+
+/* ------------------------ history seed data ------------------------ */
+function makeItem(name, value, category){ return { name, value, category }; }
+function buildHistory(){
+  const defs = [
+    { label:"Dec 2025", provider:"Northlight Electric", usageVal:731, base:118.20, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",30.10,"usage"),
+      makeItem("Energy Supply Charge",43.20,"usage"),
+      makeItem("Renewable Energy Program Fee",2.40,"taxes"),
+      makeItem("Franchise Fee",2.10,"taxes"),
+      makeItem("Municipal Utility Tax",3.60,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+      makeItem("Winter Hardship Credit",-8.20,"discount"),
+    ], usage:731, read:[39220,39951], type:"Electricity" },
+    { label:"Jan 2026", provider:"Northlight Electric", usageVal:818, base:131.40, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",33.80,"usage"),
+      makeItem("Energy Supply Charge",48.60,"usage"),
+      makeItem("Renewable Energy Program Fee",2.70,"taxes"),
+      makeItem("Franchise Fee",2.35,"taxes"),
+      makeItem("Municipal Utility Tax",4.05,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+      makeItem("Winter Hardship Credit",-8.20,"discount"),
+    ], usage:818, read:[39951,40769], type:"Electricity" },
+    { label:"Feb 2026", provider:"Northlight Electric", usageVal:790, base:127.10, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",32.60,"usage"),
+      makeItem("Energy Supply Charge",46.90,"usage"),
+      makeItem("Renewable Energy Program Fee",2.65,"taxes"),
+      makeItem("Franchise Fee",2.25,"taxes"),
+      makeItem("Municipal Utility Tax",3.95,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+      makeItem("Winter Hardship Credit",-8.20,"discount"),
+    ], usage:790, read:[40769,41559], type:"Electricity" },
+    { label:"Mar 2026", provider:"Northlight Electric", usageVal:698, base:112.80, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",28.90,"usage"),
+      makeItem("Energy Supply Charge",41.30,"usage"),
+      makeItem("Renewable Energy Program Fee",2.20,"taxes"),
+      makeItem("Franchise Fee",1.95,"taxes"),
+      makeItem("Municipal Utility Tax",3.25,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+      makeItem("Winter Hardship Credit",-5.70,"discount"),
+    ], usage:698, read:[41559,42257], type:"Electricity" },
+    { label:"Apr 2026", provider:"Northlight Electric", usageVal:641, base:104.60, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",26.70,"usage"),
+      makeItem("Energy Supply Charge",38.10,"usage"),
+      makeItem("Renewable Energy Program Fee",2.05,"taxes"),
+      makeItem("Franchise Fee",1.80,"taxes"),
+      makeItem("Municipal Utility Tax",2.95,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+      makeItem("Seasonal Rate Adjustment",-18.00,"fees"),
+    ], usage:641, read:[42257,42898], type:"Electricity" },
+    { label:"May 2026", provider:"Northlight Electric", usageVal:864, base:135.20, items:[
+      makeItem("Base Service Charge",22.50,"recurring"),
+      makeItem("Distribution Charge",35.90,"usage"),
+      makeItem("Energy Supply Charge",50.10,"usage"),
+      makeItem("Meter Access Fee",4.50,"fees"),
+      makeItem("Renewable Energy Program Fee",3.05,"taxes"),
+      makeItem("Franchise Fee",2.55,"taxes"),
+      makeItem("Municipal Utility Tax",4.20,"taxes"),
+      makeItem("Gross Receipts Tax",1.40,"taxes"),
+      makeItem("Paperless Billing Credit",-1.50,"discount"),
+    ], usage:864, read:[40310,41174], type:"Electricity" },
+  ];
+  return defs.map(d=>{
+    const totals = computeTotals(d.items.map(i=>({...i, id:uid()})));
+    return { ...d, totals };
+  });
+}
+const HISTORY = buildHistory();
+const PREVIOUS = HISTORY[HISTORY.length-1]; // May 2026
+/* Baselines registered when sample bills are analyzed, so every provider type has a fair comparison */
+const BASELINES = { Electricity: PREVIOUS };
+function registerBaseline(providerName, current){
+  if (BASELINES[current.provider.type]) return;
+  const m = current.meta.period && current.meta.period.match(/(\d{4})\s*$/);
+  const label = (m ? "" : "") + ((current.dates.periodEnd.getMonth()+1)%12===0?"Dec":["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][current.dates.periodEnd.getMonth()]) + " " + current.dates.periodEnd.getFullYear();
+  BASELINES[current.provider.type] = {
+    label: label + " (sample)",
+    type: current.provider.type,
+    provider: providerName,
+    usageVal: current.usage ? current.usage.qty : null,
+    usage: current.usage ? current.usage.qty : null,
+    items: current.lines.map(l=>({name:l.name,value:l.value,category:l.category})),
+    totals: {...current.totals},
+    synthetic: true,
+  };
+}
+
+/* -------------------------- anomaly engine -------------------------- */
+const ANOMALY_TYPES = {
+  spike:{label:"Large increase", icon:'<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'},
+  newfee:{label:"New charge", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>'},
+  removed:{label:"Removed charge", icon:'<circle cx="12" cy="12" r="9"/><path d="M8 12h8"/>'},
+  duplicate:{label:"Possible duplicate", icon:'<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/>'},
+  usage:{label:"High usage", icon:'<path d="M12 3v18M5 10l7-7 7 7"/>'},
+  expired:{label:"Expired discount", icon:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'},
+  recurring:{label:"Unexpected recurring", icon:'<path d="M4 10a8 8 0 0 1 14-4l2 2M20 14a8 8 0 0 1-14 4l-2-2"/><path d="M18 4v4h-4M6 20v-4h4"/>'},
+};
+function runAnomalies(current, previous){
+  const out = [];
+  const curPos = current.lines.filter(l=>l.value>0);
+  const prevMap = new Map(); previous.items.forEach(i=>{ const k=normName(i.name); if(!prevMap.has(k)) prevMap.set(k,i); });
+  const curMap = new Map(); curPos.forEach(l=>{ const k=normName(l.name); if(!curMap.has(k)) curMap.set(k,l); });
+  const push = o => out.push(o);
+
+  /* rule 1 — large % increases vs previous bill (only for stable plan-type lines) */
+  const volatile = /supply|distribution|energy|usage|above|kwh|municipal|gross receipts|sales tax|utility tax|calls|roaming|data/i;
+  for (const l of curPos){
+    const p = prevMap.get(normName(l.name));
+    if (p && p.value > 0 && !volatile.test(l.rawName)){
+      const change = l.value - p.value;
+      const percent = (change / p.value) * 100;
+      if (percent >= 25 && change >= 5){
+        push({ level:"high", type:"spike", title:l.name+" increased sharply",
+          why:`This charge went from ${money(p.value)} on the ${previous.label} bill to ${money(l.value)} — up ${pctFmt(percent)} (${money(change)} more). Unlike usage-based lines, this one is normally a fixed amount between cycles, so a jump like this deserves an explanation.`,
+          facts:[`Previous: ${money(p.value)}`,`Now: ${money(l.value)}`,`Change: ${pctFmt(percent)}`],
+          action:`Ask ${current.provider.name} what drove this increase — rate changes, proration, or a billing error are all possible.` });
+      } else if (percent <= -25 && change <= -5){
+        push({ level:"low", type:"spike", title:l.name+" dropped significantly", good:true,
+          why:`This charge fell ${pctFmt(percent)}, from ${money(p.value)} to ${money(l.value)}. Good news — worth confirming it wasn’t replaced by something else.`,
+          facts:[`Previous: ${money(p.value)}`,`Now: ${money(l.value)}`],
+          action:"No action needed unless the drop was unexpected." });
+      }
+    }
+  }
+  /* rule 2 — newly appearing charges (skip taxes & small lines that scale with the bill) */
+  for (const l of curPos){
+    if (l.category==="taxes") continue; // tax lines scale with usage — not "new fees"
+    const prevSimilarSmall = previous.items.some(i=>Math.abs(i.value-l.value)<1.5 && keywordOverlap(i.name,l.name)>=0.4);
+    if (prevSimilarSmall) continue; // close enough to an existing line — treat as renamed, not new
+    if (!prevMap.has(normName(l.name))){
+      const oneTime = /install|activation|connection|setup|deposit|trip|final/i.test(l.rawName);
+      const big = l.value >= 10;
+      if (big || !oneTime){
+        push({ level: oneTime ? "medium" : "high", type:"newfee", title:"New charge: "+l.name,
+          why:`“${l.name}” (${money(l.value)}) did not appear anywhere on the ${previous.label} bill. ${oneTime ? "It looks like a one-time charge — those should only happen after a service change." : "Charges that suddenly appear are the most common source of billing disputes."}`,
+          facts:[`Amount: ${money(l.value)}`,`Category: ${CATS[l.category].label}`,`Not present in ${previous.label}`],
+          action: oneTime
+            ? `Confirm you authorized this work/installation. If not, request removal and a credit.`
+            : `Check your latest terms of service — providers must disclose new recurring fees. If you didn’t agree to it, ask for it to be waived.` });
+      }
+    }
+  }
+  /* rule 3 — disappeared credits/discounts (expired) */
+  for (const i of previous.items){
+    if (i.value < 0){
+      const stillThere = current.lines.some(l=>l.value<0 && keywordOverlap(l.name,i.name)>=0.45);
+      if (!stillThere){
+        push({ level:"medium", type:"expired", title:"Discount no longer applied: "+titleCase(i.name),
+          why:`You received ${money(Math.abs(i.value))} as “${i.name}” on the ${previous.label} bill, but nothing similar appears on this bill. Your effective cost rose ${money(Math.abs(i.value))} because of it.`,
+          facts:[`Was: ${money(i.value)} on ${previous.label}`,`Now: not present`],
+          action:`Ask whether the promotion has expired and if a current loyalty or bundle discount can replace it.` });
+      }
+    }
+  }
+  /* rule 4 — duplicated-looking charges within this bill */
+  const groups = new Map();
+  curPos.forEach(l=>{ const k=normName(l.name); groups.set(k,(groups.get(k)||[]).concat(l)); });
+  for (const [,g] of groups){
+    if (g.length > 1){
+      push({ level:"high", type:"duplicate", title:g[0].name+" appears "+g.length+" times",
+        why:`The same charge line shows up ${g.length} separate times on this single bill (${g.map(x=>money(x.value)).join(" + ")}). Identical names usually mean identical services — occasionally they’re legitimate (e.g. multiple lines/devices), but it’s worth verifying.`,
+        facts:g.map((x,i)=>`Instance ${i+1}: ${money(x.value)}`),
+        action:`If you only have one ${/modem|router|device/i.test(g[0].rawName)?"device":"service"}, ask for the extra charge to be removed.` });
+    }
+  }
+  /* rule 5 — unusually high usage (compare against same provider type in history) */
+  if (current.usage && current.usage.qty){
+    const u = (current.usage.unit||"").toUpperCase();
+    const hist = HISTORY.filter(h=>h.type===current.provider.type && h.usage).map(h=>h.usage);
+    if (/KWH|HOURS?/.test(u) || (!u && /electric|gas|water|utilit/i.test(current.provider.name+text))){
+      const unitLabel = u || "kWh";
+      if (hist.length>=2){
+        const avg = hist.reduce((a,b)=>a+b,0)/hist.length;
+        if (current.usage.qty > avg*1.25){
+          push({ level:"medium", type:"usage", title:`Usage is ${Math.round((current.usage.qty/avg-1)*100)}% above your recent average`,
+            why:`This bill records ${current.usage.qty.toLocaleString()} ${unitLabel}, versus an average of about ${Math.round(avg).toLocaleString()} ${unitLabel} across the last ${hist.length} sample cycles (${Math.round(Math.min(...hist)).toLocaleString()}–${Math.round(Math.max(...hist)).toLocaleString()} range). Higher usage raises every consumption-based line on the bill.`,
+            facts:[`This period: ${current.usage.qty.toLocaleString()} ${unitLabel}`,`Sample average: ${Math.round(avg).toLocaleString()} ${unitLabel}`],
+            action:`Compare your meter reading against a photo of your meter. If the reading looks wrong, request a meter accuracy test — utilities usually perform them free of charge.` });
+        }
+      } else {
+        push({ level:"low", type:"usage", title:`Recorded usage: ${current.usage.qty.toLocaleString()} ${unitLabel}`,
+          why:`We have no earlier ${current.provider.type.toLowerCase()} bills in the sample history to compare against, so we can’t judge whether this is high. For reference, typical residential electricity runs roughly 500–900 kWh per month.`,
+          facts:[`This period: ${current.usage.qty.toLocaleString()} ${unitLabel}`],
+          action:"Keep this bill — next time you analyze a similar one, usage will be compared automatically." });
+      }
+    } else if (/GB/.test(u) && current.usage.qty >= 10){
+      const overageLine = current.lines.find(l=>/usage above|overage/i.test(l.rawName));
+      const rate = (overageLine && overageLine.unitPrice) || 10;
+      const amount = overageLine ? overageLine.value : current.usage.qty*rate;
+      push({ level:"high", type:"usage", title:`Heavy metered usage: ${current.usage.qty} ${u} beyond your included allowance`,
+        why:`You were billed ${money(amount)} for ${current.usage.qty} ${u} of overage at roughly ${money(rate)}/${u}. Overage rates are typically 5–10× the bundled rate.`,
+        facts:[`Overage: ${current.usage.qty} ${u}`,`Approx. rate: ${money(rate)}/${u}`,`Charged: ${money(amount)}`],
+        action:`Compare the cost of a higher-tier plan against the overage. Ask the provider which plans include more data — the upgrade is often cheaper than the penalty.` });
+    }
+  }
+  /* rule 6 — unexpected recurring fee */
+  for (const l of curPos){
+    if (/add.?on|protection|insurance|premium pack|channel|membership|streaming|app store|cloud|extended warranty/i.test(l.rawName)){
+      push({ level:"medium", type:"recurring", title:`Add-on worth reviewing: ${l.name}`,
+        why:`“${l.name}” (${money(l.value)}/mo) is an optional add-on, not a core service. Over a year this costs ${money(l.value*12)}. Small recurring add-ons are the easiest savings to miss.`,
+        facts:[`Monthly: ${money(l.value)}`,`Annualized: ${money(l.value*12)}`],
+        action:`If you don’t actively use it, cancel it — most providers allow add-on removal in account settings or with one phone call.` });
+    }
+  }
+  /* severity sort */
+  const rank={high:0,medium:1,low:2};
+  out.sort((a,b)=>rank[a.level]-rank[b.level]);
+  return out;
+}
+
+/* ------------------------- checklist generator ------------------------- */
+function buildChecklist(current, previous, anomalies){
+  const items = [];
+  const add=(group,text,opts={})=>items.push({id:uid(),group,text,done:false,...opts});
+  add("deadline", `Pay ${money(current.totals.total)} by ${fmtDate(current.dates.dueDate)} to avoid late fees.`, {tag:"Deadline"});
+  anomalies.filter(a=>a.level==="high"&&!a.good).slice(0,3).forEach(a=>{
+    add("verify", a.action, {tag:"Verify"});
+  });
+  anomalies.filter(a=>a.type==="expired").forEach(a=> add("savings", a.action, {tag:"Savings"}));
+  anomalies.filter(a=>a.type==="recurring").forEach(a=> add("savings", a.action, {tag:"Savings"}));
+  if (current.totals.taxes > current.totals.total*0.09)
+    add("verify", `Taxes and regulatory fees total ${money(current.totals.taxes)} (${Math.round(current.totals.taxes/current.totals.total*100)}% of the bill) — confirm taxable items are classified correctly.`, {tag:"Verify"});
+  add("questions", `Call ${current.provider.name} and ask: “Which charges on this statement changed since ${previous.label}, and why?”`, {tag:"Question"});
+  add("questions", `Ask whether a lower-cost plan tier would cover your typical ${current.usage?current.usage.qty+" "+current.usage.unit:"usage"} without overage charges.`, {tag:"Question"});
+  add("questions", `Ask if enrolling in (or keeping) autopay/paperless earns a standing discount.`, {tag:"Question"});
+  add("next", `Review the “Worth Checking” tab and resolve each flagged item before the due date.`, {tag:"Next step"});
+  add("next", `Keep this summary — if a charge isn’t resolved, reference the statement date and line amounts when you dispute it.`, {tag:"Next step"});
+  return items.slice(0,12);
+}
+
+/* ------------------------------ state ------------------------------ */
+const LS_KEY = "billlens.v1";
+const state = {
+  view:"dashboard",
+  current:null,
+  processed:false,
+  processing:false,
+  activeTab:"breakdown",
+  selectedMonth:PREVIOUS.label,
+};
+function saveState(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      current: state.current ? {
+        provider:state.current.provider, meta:state.current.meta, dates:state.current.dates,
+        totals:state.current.totals, lines:state.current.lines, usage:state.current.usage,
+        rawText:state.current.rawText, anomalies:state.current.anomalies,
+        prevTotal:state.current.prevTotal, prevLabel:state.current.prevLabel,
+        checklist:state.current.checklist, savedAt:state.current.savedAt,
+      } : null,
+      selectedMonth: state.selectedMonth,
+    }));
+  }catch(e){/* storage unavailable — app still works in-memory */}
+}
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LS_KEY));
+    if (s && s.current && Array.isArray(s.current.lines) && s.current.lines.length){
+      state.current = s.current;
+      if (state.current.baseline===undefined){
+        const b = HISTORY.find(h=>h.label===state.current.prevLabel);
+        state.current.baseline = b ? b : null; // null => fall back to PREVIOUS via prevOf()
+      }
+      state.processed = true;
+      if (s.selectedMonth) state.selectedMonth = s.selectedMonth;
+    }
+  }catch(e){}
+}
+function analyzeText(text){
+  const { meta, lines } = parseBill(text);
+  if (!lines.length) return null;
+  const totals = computeTotals(lines);
+  const provider = detectProvider(text);
+  const dates = extractDates(meta);
+  const declaredTotal = meta.total!=null ? parseFloat(meta.total.replace(/[$,]/g,"")) : null;
+  const discrepancy = declaredTotal!=null && Math.abs(declaredTotal-totals.total)>0.01 ? {declared:declaredTotal, computed:totals.total} : null;
+  let usage=null;
+  if (meta.usage) usage={qty:parseNum(meta.usage), unit:(text.match(/usage this period[:\s]+[\d,\.]+\s*([a-z%]{1,6})/i)||[])[1]||""};
+  /* pick the most comparable bill from sample history as the comparison baseline */
+  const sameType = HISTORY.filter(h=>h.type===provider.type);
+  const baseline = (sameType.length?sameType[sameType.length-1]:PREVIOUS);
+  const current = {
+    provider, meta, dates, totals, lines, usage, discrepancy,
+    rawText:text, savedAt:new Date().toISOString(),
+    prevTotal:baseline.totals.total, prevLabel:baseline.label, baseline,
+  };
+  current.anomalies = runAnomalies(current, baseline);
+  current.checklist = buildChecklist(current, baseline, current.anomalies);
+  return current;
+}
+
+/* ------------------------------ icons ------------------------------ */
+const IC = {
+  check:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  info:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.5"/></svg>',
+  warn:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4M12 17.5v.5"/></svg>',
+  shield:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 8.5-7 10-4-1.5-7-5.5-7-10V6z"/><path d="m9 12 2 2 4-4"/></svg>',
+  copy:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>',
+  print:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/></svg>',
+  arrowUp:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+  arrowDown:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg>',
+};
+
+/* ------------------------------ toasts ------------------------------ */
+function toast(msg,type="success"){
+  const el=document.createElement("div");
+  el.className="toast "+type;
+  const ic = type==="error"?IC.warn:type==="info"?IC.info:IC.check;
+  el.innerHTML=`<span class="ticon">${ic}</span><span>${esc(msg)}</span>`;
+  $("#toasts").appendChild(el);
+  setTimeout(()=>{ el.classList.add("out"); setTimeout(()=>el.remove(),260); },3200);
+}
+
+/* --------------------------- privacy modal --------------------------- */
+function openPrivacy(){
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;z-index:150;background:rgba(15,23,42,.45);display:grid;place-items:center;padding:20px;animation:viewIn .18s ease both";
+  ov.innerHTML=`
+  <div role="dialog" aria-modal="true" aria-labelledby="pvTitle" style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:24px;box-shadow:var(--shadow-lg)">
+    <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+      <span style="width:36px;height:36px;border-radius:10px;background:var(--good-soft);color:var(--good);display:grid;place-items:center">${IC.shield}</span>
+      <h2 id="pvTitle" style="margin:0;font-size:16.5px;font-weight:800;letter-spacing:-.02em">Your privacy in this demo</h2>
+    </div>
+    <ul style="margin:0 0 18px;padding-left:18px;font-size:13.5px;color:var(--muted);line-height:1.65">
+      <li>Pasted bill text is parsed <strong style="color:var(--text)">locally in your browser</strong> — nothing is uploaded, and no external API is called.</li>
+      <li>Your last analysis and checklist progress are kept in this browser’s <code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 5px;border-radius:4px">localStorage</code> so the app remembers them on reload. Clearing site data removes it.</li>
+      <li>BillLens never connects to your bank, card, or any provider’s systems. Every conclusion comes from transparent rules applied to text you paste.</li>
+      <li>All providers, accounts, and history shown here are <strong style="color:var(--text)">fictional sample data</strong>.</li>
+    </ul>
+    <div style="text-align:right"><button class="btn btn-primary" data-close>Got it</button></div>
+  </div>`;
+  document.body.appendChild(ov);
+  const close=()=>{ ov.remove(); document.removeEventListener("keydown",onKey); };
+  const onKey=e=>{ if(e.key==="Escape") close(); };
+  ov.addEventListener("click",e=>{ if(e.target===ov||e.target.closest("[data-close]")) close(); });
+  document.addEventListener("keydown",onKey);
+  ov.querySelector("[data-close]").focus();
+}
+
+/* --------------------------- clipboard --------------------------- */
+async function copyText(t){
+  try{ await navigator.clipboard.writeText(t); return true; }
+  catch(e){
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=t; ta.setAttribute("readonly",""); ta.style.cssText="position:fixed;left:-9999px";
+      document.body.appendChild(ta); ta.select();
+      const ok=document.execCommand("copy"); ta.remove(); return ok;
+    }catch(e2){ return false; }
+  }
+}
+
+/* =========================== RENDERERS =========================== */
+
+/* ---- helpers shared by views ---- */
+function deltaBadge(c){
+  const diff=c.totals.total-c.prevTotal, p=c.prevTotal?diff/c.prevTotal*100:0;
+  if (Math.abs(diff)<0.005) return `<span class="badge flat">No change</span>`;
+  return `<span class="badge ${diff>0?"up":"down"}">${diff>0?IC.arrowUp:IC.arrowDown} ${pctFmt(p)} vs ${plabel(c)}</span>`;
+}
+function healthInfo(c){
+  const diff=c.totals.total-c.prevTotal, p=diff/c.prevTotal*100;
+  const highs=c.anomalies.filter(a=>a.level==="high"&&!a.good).length;
+  const meds=c.anomalies.filter(a=>a.level==="medium").length;
+  if (p>12||highs>=2) return {cls:"bad",icon:IC.warn,title:"Needs attention",msg:`Your bill is up ${pctFmt(p)} (${money(diff)}) and ${highs} item${highs===1?"":"s"} look${highs===1?"s":""} unusual. Review “Worth Checking” before paying.`};
+  if (p>4||meds>0) return {cls:"warn",icon:IC.info,title:"Mostly fine — a few things to check",msg:`Your bill is up ${pctFmt(p)} (${money(diff)}). ${meds+highs} item${meds+highs===1?" needs":"s need"} a quick look in “Worth Checking”.`};
+  return {cls:"good",icon:IC.check,title:"Looks normal",msg:`Your bill is within expected range (${pctFmt(p)} vs ${plabel(c)}). No high-severity issues detected.`};
+}
+function whatChangedBullets(c){
+  const prevMap=new Map(prevOf(c).items.map(i=>[normName(i.name),i]));
+  const curMap=new Map(); c.lines.forEach(l=>{const k=normName(l.name); if(!curMap.has(k))curMap.set(k,l);});
+  const rows=[];
+  for (const [k,l] of curMap){
+    const p=prevMap.get(k);
+    if (p){ const d=l.value-p.value; if (Math.abs(d)>=0.5) rows.push({name:l.name,delta:d,pct:p.value?d/Math.abs(p.value)*100:0}); }
+    else if (l.value>0) rows.push({name:l.name,delta:l.value,pct:null,fresh:true});
+  }
+  for (const [k,i] of prevMap){ if(!curMap.has(k)) rows.push({name:titleCase(k),delta:i.value,pct:null,gone:true}); }
+  rows.sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta));
+  return rows.slice(0,6);
+}
+function headlineChange(c){
+  const rows=whatChangedBullets(c);
+  const diff=c.totals.total-c.prevTotal;
+  const dir=diff>0?"increased":diff<0?"decreased":"stayed flat";
+  const parts=[];
+  const eq=rows.find(r=>r.fresh&&/equip|rental|router|modem|install/i.test(r.name));
+  if (eq) parts.push(`the ${eq.name.toLowerCase()} appeared this month (+${money(eq.delta)})`);
+  const spike=rows.filter(r=>!r.fresh&&!r.gone&&Math.abs(r.pct||0)>=25).sort((a,b)=>Math.abs(b.delta)-Math.abs(a.delta))[0];
+  if (spike) parts.push(`${spike.name.toLowerCase()} ${spike.delta>0?"rose":"fell"} ${pctFmt(spike.pct)}`);
+  const fresh=rows.filter(r=>r.fresh&&!/equip|rental|router|modem|install/i.test(r.name))[0];
+  if (fresh&&parts.length<2) parts.push(`a new charge, ${fresh.name.toLowerCase()}, added ${money(fresh.delta)}`);
+  const exp=c.anomalies.find(a=>a.type==="expired");
+  if (exp&&parts.length<2) parts.push(`the ${exp.title.replace("Discount no longer applied: ","").toLowerCase()} ended`);
+  const sum=diff===0?`Nothing material changed since ${plabel(c)}.`:
+    `Your total ${dir} mainly because ${parts.length?parts.join(", and "):"small movements across several lines"}.`;
+  return {sum,rows,diff};
+}
+
+function prevOf(c){ return (c&&c.baseline)||PREVIOUS; }
+function plabel(c){ return prevOf(c).label; }
+
+/* ---- DASHBOARD ---- */
+function renderDashboard(){
+  const host=$("#dashEmpty"), body=$("#dashContent");
+  if (!state.current||!state.processed){
+    body.hidden=true; host.innerHTML=`
+    <div class="card" style="text-align:center;padding:44px 24px">
+      <div style="width:56px;height:56px;border-radius:16px;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;margin:0 auto 16px">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7z"/><path d="M14 2v5h5M9 13h6M9 17h4"/></svg>
+      </div>
+      <h2 style="margin:0 0 6px;font-size:19px;font-weight:800;letter-spacing:-.02em">No bill analyzed yet</h2>
+      <p style="max-width:430px;margin:0 auto 18px;color:var(--muted);font-size:14px">Paste your bill text and BillLens will break down every charge, compare it with last month, flag anything unusual, and build an action checklist.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="btn btn-primary btn-lg" id="emptyTry">⚡ Try Sample Bill</button>
+        <button class="btn btn-secondary btn-lg" id="emptyPaste">Paste My Bill</button>
+      </div>
+      <p style="margin:16px auto 0;max-width:430px;font-size:12px;color:var(--faint)">${IC.shield.replaceAll('width="15"','width="11"').replaceAll('height="15"','height="11"')} Everything runs locally in this browser. Nothing is uploaded.</p>
+    </div>`;
+    $("#emptyTry").addEventListener("click",()=>startAnalysis(SAMPLE_ELECTRICITY,true));
+    $("#emptyPaste").addEventListener("click",()=>{ setView("analyze"); setTimeout(()=>$("#billInput")&&$("#billInput").focus(),80); });
+    return;
+  }
+  host.innerHTML=""; body.hidden=false;
+  const c=state.current, hc=headlineChange(c), hi=healthInfo(c);
+  const dd=daysUntil(c.dates.dueDate);
+  const dueTxt = dd<0?`Paid window passed ${Math.abs(dd)} day${Math.abs(dd)===1?"":"s"} ago` : dd===0?"Due today!" : dd<=7?`Due in ${dd} days`:`Due in ${dd} days`;
+  const recurring=c.lines.filter(l=>["recurring","equipment"].includes(l.category)&&l.value>0).reduce((a,l)=>a+l.value,0);
+  const flags=c.anomalies.filter(a=>!a.good).length;
+  const baseIdx=HISTORY.findIndex(h=>h.label===plabel(c));
+  const series=baseIdx>=0?HISTORY.slice(Math.max(0,baseIdx-5),baseIdx+1):HISTORY;
+  const nextLabel=(series[series.length-1].label.split(" ")[1]==="2026")?series[series.length-1].label.split(" ")[0]+" 2026":c.provider.type+" (current)";
+  const sparkMonths=[...series.map(h=>({label:h.label,value:h.totals.total,current:false})),{label:nextLabel,value:c.totals.total,current:true}];
+  const maxV=Math.max(...sparkMonths.map(m=>m.value));
+  body.innerHTML=`
+  <div class="grid dash-grid">
+    <div>
+      <div class="hero">
+        <div class="hero-top">
+          <div class="provider-line">
+            <span class="provider-logo" style="background:${sampleColorFor(c)}">${initials(c.provider.name)}</span>
+            <div>
+              <div class="provider-name">${esc(c.provider.name)}</div>
+              <div class="provider-meta">${esc(c.provider.type)} bill${c.meta.account?` · Account <span class="mono">${esc(maskAcct(c.meta.account))}</span>`:""}${c.meta.holder?` · ${esc(c.meta.holder)}`:""}</div>
+            </div>
+          </div>
+          ${deltaBadge(c)}
+        </div>
+        <div class="hero-amount">
+          <span class="hero-total">${money(c.totals.total)}</span>
+          <span style="color:var(--muted);font-size:13px">vs ${money(c.prevTotal)} in ${plabel(c)}</span>
+          <div class="hero-due">
+            <div>${dueTxt.startsWith("Paid")?`<span style="color:var(--bad);font-weight:700">${esc(dueTxt)}</span>`:`<span style="color:${dd<=7?"var(--warn)":"var(--muted)"};font-weight:700">${esc(dueTxt)}</span>`}</div>
+            <div>Due <b>${fmtDate(c.dates.dueDate)}</b></div>
+          </div>
+        </div>
+        <div class="hero-stats">
+          <div class="stat"><div class="stat-label">Current bill</div><div class="stat-value">${money(c.totals.total)}</div><div class="stat-note">detected from bill text</div></div>
+          <div class="stat"><div class="stat-label">Previous bill</div><div class="stat-value">${money(c.prevTotal)}</div><div class="stat-note">${plabel(c)} (sample history)</div></div>
+          <div class="stat"><div class="stat-label">Change</div><div class="stat-value" style="color:${hc.diff>0?"var(--bad)":hc.diff<0?"var(--good)":"var(--text)"}">${hc.diff>0?"+":""}${money(hc.diff).replace("$-","-$")}</div><div class="stat-note">${pctFmt(hc.diff/c.prevTotal*100)} cycle-over-cycle</div></div>
+          <div class="stat"><div class="stat-label">Billing period</div><div class="stat-value" style="font-size:13.5px;line-height:1.35;margin-top:4px">${esc(c.meta.period||`${fmtDate(c.dates.periodStart)} – ${fmtDate(c.dates.periodEnd)}`)}</div><div class="stat-note">statement ${fmtDate(c.dates.statementDate)}</div></div>
+        </div>
+        <div class="hero-stats" style="margin-top:10px">
+          <div class="stat"><div class="stat-label">Subtotal</div><div class="stat-value">${money(c.totals.subtotal)}</div></div>
+          <div class="stat"><div class="stat-label">Taxes</div><div class="stat-value">${money(c.totals.taxes)}</div><div class="stat-note">${Math.round(c.totals.taxes/c.totals.total*100)}% of total</div></div>
+          <div class="stat"><div class="stat-label">Discounts</div><div class="stat-value neg">${money(c.totals.discounts)}</div></div>
+          <div class="stat"><div class="stat-label">Recurring / est. monthly</div><div class="stat-value">${money(recurring)}</div><div class="stat-note">plan + equipment lines</div></div>
+        </div>
+        <div class="status-strip ${hi.cls}" role="status">
+          ${hi.icon}<span><b>${hi.title}.</b> ${esc(hi.msg)}</span>
+        </div>
+        ${c.discrepancy?`<div class="status-strip bad" style="margin-top:8px">${IC.warn}<span><b>Fact:</b> the bill states a total of ${money(c.discrepancy.declared)}, but its line items add up to ${money(c.discrepancy.computed)} (${money(c.discrepancy.declared-c.discrepancy.computed)} difference). Worth asking about.</span></div>`:""}
+      </div>
+
+      <div class="card" style="margin-top:16px">
+        <h3 class="card-title">What changed vs ${plabel(c)}</h3>
+        <div class="change-summary">
+          <span style="flex:none;color:var(--primary);margin-top:1px">${IC.info}</span>
+          <div><b>Plain-language summary:</b> ${esc(hc.sum)}
+            <ul>${hc.rows.slice(0,3).map(r=>`<li>${esc(r.name)} — ${r.fresh?"new this cycle":r.gone?"no longer charged":"moved"} by <b class="${(r.gone?-r.delta:r.delta)>0?"delta-up":"delta-down"}">${(r.gone?-r.delta:r.delta)>0?"+":""}${money(r.gone?-r.delta:r.delta)}</b></li>`).join("")}</ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <h3 class="card-title">Spending trend</h3>
+        <div class="mini-chart-bars" role="img" aria-label="Bar chart of monthly bill totals from December 2025 to the current bill">
+          ${sparkMonths.map(m=>`
+            <div class="mc-bar ${m.current?"current":""}" title="${esc(m.label)}: ${money(m.value)}">
+              <span class="mc-val">${Math.round(m.value)}</span>
+              <div class="mc-fill" style="height:${clamp(m.value/maxV*86,6,86)}px"></div>
+              <span class="mc-label">${esc(m.label.split(" ")[0])}</span>
+            </div>`).join("")}
+        </div>
+        <p style="margin:10px 0 0;font-size:12px;color:var(--faint)">Last 6 sample cycles + current bill. 6-month average: <b style="color:var(--muted)">${money(series.reduce((a,h)=>a+h.totals.total,0)/series.length)}</b></p>
+      </div>
+      <div class="card">
+        <h3 class="card-title">Where the money goes</h3>
+        ${donutHTML(c)}
+      </div>
+      <div class="card">
+        <h3 class="card-title">Quick actions</h3>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <button class="btn btn-secondary" id="dashGoBreakdown">Full line-item breakdown →</button>
+          <button class="btn btn-secondary" id="dashGoFlags">${flags?`Review ${flags} flagged item${flags===1?"":"s"}`:"Review “Worth Checking”"} ${flags?`<span class="nav-badge">${flags}</span>`:""}</button>
+          <button class="btn btn-secondary" id="dashGoActions">Open Action Center <span id="dashActCount"></span></button>
+          <button class="btn btn-secondary" id="dashGoHistory">Compare past months →</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+  $("#dashGoBreakdown").addEventListener("click",()=>{ setView("analyze"); switchTab("breakdown"); });
+  $("#dashGoFlags").addEventListener("click",()=>{ setView("analyze"); switchTab("flags"); });
+  $("#dashGoActions").addEventListener("click",()=>{ setView("analyze"); switchTab("actions"); });
+  $("#dashGoHistory").addEventListener("click",()=>setView("history"));
+  updateDashActCount();
+}
+function updateDashActCount(){
+  const el=$("#dashActCount"); if(!el||!state.current) return;
+  const done=state.current.checklist.filter(i=>i.done).length;
+  el.textContent=done?`(${done}/${state.current.checklist.length})`:"";
+}
+function sampleColorFor(c){
+  const s=SAMPLES.find(s=>s.name.toUpperCase()===c.provider.name.toUpperCase());
+  if (s) return s.color;
+  return {Electricity:"#d97706",Internet:"#6d5ce7",Mobile:"#0d9488",Subscription:"#e11d48",Service:"#0e5fe4"}[c.provider.type]||"#0e5fe4";
+}
+function initials(name){ return name.split(/\s+/).slice(0,2).map(w=>w[0]).join("").toUpperCase(); }
+function maskAcct(a){ const d=a.replace(/[^A-Za-z0-9]/g,""); return d.length>4?"•••• "+d.slice(-4):a; }
+
+/* ---- donut ---- */
+function categoryData(c){
+  const cats={};
+  c.lines.forEach(l=>{ cats[l.category]=(cats[l.category]||0)+l.value; });
+  const gross=Object.entries(cats).filter(([k,v])=>k!=="discount"&&v>0);
+  const disc=Math.abs(cats.discount||0);
+  return {gross,disc,total:c.totals.total};
+}
+function donutSVG(data,total,size=190,sw=24){
+  const r=(size-sw)/2-2, circ=2*Math.PI*r;
+  let acc=0;
+  const segs=data.map(([label,val,color])=>{
+    const frac=val/total, off=acc; acc+=frac;
+    return `<circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}"
+      stroke-dasharray="${(frac*circ).toFixed(2)} ${(circ-frac*circ).toFixed(2)}"
+      stroke-dashoffset="${(-off*circ+circ/4).toFixed(2)}" transform="rotate(0 ${size/2} ${size/2})"><title>${esc(label)}: ${money(val)} (${(frac*100).toFixed(1)}%)</title></circle>`;
+  }).join("");
+  return `<svg class="donut" viewBox="0 0 ${size} ${size}" role="img" aria-label="Donut chart of bill categories">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#eef1f6" stroke-width="${sw}"/>
+    ${segs}
+    <text x="${size/2}" y="${size/2-6}" text-anchor="middle" font-size="11" font-weight="700" fill="#8b98aa" letter-spacing="1">TOTAL</text>
+    <text x="${size/2}" y="${size/2+16}" text-anchor="middle" font-size="19" font-weight="800" fill="#0f172a">${money(total)}</text>
+  </svg>`;
+}
+function donutHTML(c){
+  const {gross,disc,total}=categoryData(c);
+  const data=gross.map(([k,v])=>[CATS[k].label,v,CATS[k].color]);
+  return `<div class="donut-wrap">
+    ${donutSVG(data,total)}
+    <ul class="legend">
+      ${gross.map(([k,v])=>`<li><span class="cat-dot" style="background:${CATS[k].color}"></span><span class="lg-name">${CATS[k].label}</span><span class="lg-amt">${money(v)}</span><span class="lg-pct">${Math.round(v/total*100)}%</span></li>`).join("")}
+      ${disc>0?`<li><span class="cat-dot" style="background:${CATS.discount.color}"></span><span class="lg-name">Credits & discounts</span><span class="lg-amt neg">${money(disc)}</span><span class="lg-pct neg">−${Math.round(disc/(total+disc)*100)}%</span></li>`:""}
+    </ul>
+  </div>`;
+}
+
+/* ---- ANALYZE view ---- */
+function renderAnalyze(){
+  const host=$("#analyzeBody");
+  if (state.processing){
+    host.innerHTML=`
+    <div class="card processing">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="spinner" style="width:20px;height:20px;border-width:2.5px"></span>
+        <div><div style="font-weight:700;font-size:15px">Analyzing your bill…</div>
+        <div style="font-size:12.5px;color:var(--muted)">Rule-based parsing, entirely on this device.</div></div>
+      </div>
+      <ul class="proc-steps" id="procSteps">
+        ${["Reading the statement structure","Extracting line items & amounts","Comparing against previous cycles","Checking for unusual charges","Building your action checklist"].map(s=>`<li class="proc-step"><span class="picon"></span>${s}</li>`).join("")}
+      </ul>
+      <div class="proc-bar"><div id="procBar"></div></div>
+    </div>`;
+    return;
+  }
+  if (!state.current){
+    host.innerHTML=`
+    <div class="analyze-grid">
+      <div class="card">
+        <label class="card-title" for="billInput" style="display:block">Raw bill text</label>
+        <textarea id="billInput" spellcheck="false" placeholder="Paste your bill here, e.g.
+
+ACME UTILITIES — BILL SUMMARY
+Billing Period: May 1 - May 31, 2026
+Due Date: June 15, 2026
+
+LINE ITEMS
+Base Service Charge ......... $22.50
+Energy Supply Charge ........ $52.53
+Municipal Utility Tax ....... $4.41
+Paperless Billing Credit .... -$1.50
+
+TOTAL AMOUNT DUE  $77.94
+
+…or pick a realistic sample bill on the right, then press Analyze Bill."></textarea>
+        <div class="input-toolbar">
+          <span class="char-count" id="charCount">0 characters · 0 lines</span>
+          <div style="display:flex;gap:9px">
+            <button class="btn btn-ghost btn-sm" id="clearBtn">Clear</button>
+            <button class="btn btn-primary" id="analyzeBtn" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              Analyze Bill
+            </button>
+          </div>
+        </div>
+        <div class="privacy-note">${IC.shield}<span><b>Private by design:</b> this demo parses the text you paste directly in your browser. It never uploads anything, never calls an external AI service, and does not connect to your bank or provider. Conclusions come from transparent, local rules you can inspect.</span></div>
+      </div>
+      <div class="grid" style="align-content:start">
+        <div class="card">
+          <h3 class="card-title">Or start with a sample</h3>
+          <p style="margin:0 0 12px;font-size:13px;color:var(--muted)">Realistic (fictional) bills to explore every feature:</p>
+          <div class="sample-chips" style="flex-direction:column;align-items:stretch">
+            ${SAMPLES.map(s=>`<button class="chip" data-sample="${s.key}" style="justify-content:space-between;padding:10px 14px">
+              <span style="display:flex;align-items:center;gap:9px"><span class="dot" style="background:${s.color}"></span><b style="color:var(--text)">${s.name}</b></span>
+              <span>${s.type}</span></button>`).join("")}
+          </div>
+          <button class="btn btn-primary" id="trySampleBtn" style="width:100%;margin-top:14px">⚡ Try Sample Bill</button>
+        </div>
+        <div class="card">
+          <h3 class="card-title">How it works</h3>
+          <ol style="margin:0;padding-left:18px;font-size:13px;color:var(--muted);line-height:1.75">
+            <li>Paste bill text copied from a PDF, email, or paper statement.</li>
+            <li>BillLens extracts line items, taxes, fees and discounts with readable rules.</li>
+            <li>You get a breakdown, a comparison to the previous cycle, flagged oddities, and an action checklist.</li>
+          </ol>
+        </div>
+      </div>
+    </div>`;
+    wireInput();
+    return;
+  }
+  /* ------- results ------- */
+  const c=state.current;
+  host.innerHTML=`
+  <div class="results-head">
+    <div style="display:flex;align-items:center;gap:11px">
+      <span class="provider-logo" style="background:${sampleColorFor(c)};width:34px;height:34px;font-size:13px">${initials(c.provider.name)}</span>
+      <div>
+        <div style="font-weight:700;font-size:15px">${esc(c.provider.name)} · ${esc(c.provider.type)}</div>
+        <div style="font-size:12px;color:var(--muted)">${c.lines.length} line items detected · analyzed ${new Date(c.savedAt).toLocaleTimeString([],{hour:"numeric",minute:"2-digit"})}</div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm" id="resCopy">${IC.copy} Copy Summary</button>
+      <button class="btn btn-secondary btn-sm" id="resPrint">${IC.print} Print</button>
+      <button class="btn btn-secondary btn-sm" id="resNew">Analyze Another</button>
+      <button class="btn btn-danger btn-sm" id="resClear">Clear</button>
+    </div>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Analysis sections">
+    ${[["breakdown","Smart Breakdown"],["changes","What Changed"],["flags","Worth Checking"],["actions","Action Center"]].map(([k,l])=>
+      `<button class="tab ${state.activeTab===k?"active":""}" role="tab" aria-selected="${state.activeTab===k}" data-tab="${k}">${l}${k==="flags"&&c.anomalies.filter(a=>!a.good).length?` <span class="nav-badge" style="background:${k==="flags"?"var(--amber)":""}">${c.anomalies.filter(a=>!a.good).length}</span>`:""}</button>`).join("")}
+  </div>
+  <div id="tabPanels" style="margin-top:16px"></div>`;
+  $("#resCopy").addEventListener("click",()=>copySummary(c));
+  $("#resPrint").addEventListener("click",printReport);
+  $("#resNew").addEventListener("click",()=>{ state.processed=false; state.current=null; saveState(); renderAnalyze(); renderDashboard(); $("#billInput").focus(); });
+  $("#resClear").addEventListener("click",()=>{
+    state.current=null; state.processed=false; saveState();
+    renderAnalyze(); renderDashboard();
+    toast("Analysis cleared — back to empty state","info");
+  });
+  $$(".tab").forEach(t=>t.addEventListener("click",()=>switchTab(t.dataset.tab)));
+  renderTabPanel();
+}
+function wireInput(){
+  const ta=$("#billInput"), btn=$("#analyzeBtn"), cc=$("#charCount");
+  if (!ta) return;
+  const upd=()=>{ const v=ta.value.trim(); btn.disabled=v.length<20; cc.textContent=`${ta.value.length.toLocaleString()} characters · ${ta.value?ta.value.split(/\r?\n/).length:0} lines`; };
+  ta.addEventListener("input",upd); upd();
+  btn.addEventListener("click",()=>{
+    if (ta.value.trim().length<20){ toast("Please paste at least a few lines of bill text.","error"); ta.focus(); return; }
+    startAnalysis(ta.value,false);
+  });
+  $("#clearBtn").addEventListener("click",()=>{ ta.value=""; upd(); ta.focus(); });
+  $("#trySampleBtn").addEventListener("click",()=>startAnalysis(SAMPLE_ELECTRICITY,true));
+  $$("[data-sample]").forEach(b=>b.addEventListener("click",()=>{
+    const s=SAMPLES.find(x=>x.key===b.dataset.sample);
+    ta.value=s.text; upd(); toast(`${s.name} sample loaded — press Analyze Bill`,"info"); ta.scrollTop=0;
+  }));
+}
+function startAnalysis(text,isSample){
+  state.processing=true; state._pendingText=text; renderAnalyze();
+  const steps=$$("#procSteps .proc-step");
+  const bar=$("#procBar");
+  let i=0;
+  const tick=()=>{
+    if (i>0){ steps[i-1].classList.remove("doing"); steps[i-1].classList.add("done"); steps[i-1].querySelector(".picon").innerHTML=IC.check; }
+    if (i<steps.length){
+      steps[i].classList.add("doing");
+      steps[i].querySelector(".picon").innerHTML='<span class="spinner"></span>';
+      bar.style.width=((i+1)/steps.length*100)+"%";
+      i++; setTimeout(tick, 300+Math.random()*260);
+    } else {
+      finishAnalysis(text,isSample);
+    }
+  };
+  setTimeout(tick,120);
+}
+function finishAnalysis(text,isSample){
+  const result=analyzeText(text);
+  state.processing=false;
+  if (!result){
+    renderAnalyze();
+    toast("Couldn’t find any priced line items in that text. Try a sample bill or include lines with dollar amounts.","error");
+    return;
+  }
+  state.current=result; state.processed=true; state.activeTab="breakdown";
+  saveState(); renderAnalyze(); renderDashboard();
+  toast(isSample?"Sample bill analyzed — showing full breakdown":"Bill analyzed successfully","success");
+}
+
+/* ---- tabs ---- */
+function switchTab(key){
+  state.activeTab=key;
+  $$(".tab").forEach(t=>{ const on=t.dataset.tab===key; t.classList.toggle("active",on); t.setAttribute("aria-selected",on); });
+  renderTabPanel();
+}
+function renderTabPanel(){
+  const host=$("#tabPanels"); if(!host||!state.current) return;
+  const c=state.current;
+  if (state.activeTab==="breakdown") host.innerHTML=panelBreakdown(c);
+  else if (state.activeTab==="changes") host.innerHTML=panelChanges(c);
+  else if (state.activeTab==="flags") host.innerHTML=panelFlags(c);
+  else host.innerHTML=panelActions(c);
+  if (state.activeTab==="breakdown") wireBreakdown(c);
+  if (state.activeTab==="actions") wireActions(c);
+}
+function panelBreakdown(c){
+  const {gross,disc,total}=categoryData(c);
+  const rows=c.lines.map(l=>{
+    const share=l.value/total*100;
+    return `<tr>
+      <td><div class="li-name">${esc(l.name)}</div>${l.qty&&l.unitPrice?`<div class="li-sub mono">${l.qty.toLocaleString()} ${esc(l.unit)} @ ${money(l.unitPrice)}/${esc(l.unit)}</div>`:l.unit?`<div class="li-sub">${esc(l.metaNote||"")}</div>`:""}</td>
+      <td><span class="cat-dot" style="background:${CATS[l.category].color}"></span>${CATS[l.category].label}</td>
+      <td class="num ${l.value<0?"neg":""}">${moneyShort(l.value)}</td>
+      <td class="num pct-cell">${share.toFixed(1)}%</td>
+      <td style="width:110px"><div class="bar-track"><div class="bar-fill" style="width:${clamp(Math.abs(share),0,100)}%;background:${CATS[l.category].color}"></div></div></td>
+    </tr>`;
+  }).join("");
+  return `
+  <div class="grid charts-row">
+    <div class="card">
+      <h3 class="card-title">Line items (${c.lines.length})</h3>
+      <div class="table-wrap">
+        <table class="lines">
+          <thead><tr><th>Description</th><th>Category</th><th class="num">Amount</th><th class="num">% of total</th><th>Share</th></tr></thead>
+          <tbody>
+            ${rows}
+            <tr><td colspan="2" style="font-weight:600;color:var(--muted)">Subtotal (positive charges)</td><td class="num">${moneyShort(c.totals.subtotal)}</td><td></td><td></td></tr>
+            <tr><td colspan="2" style="font-weight:600;color:var(--muted)">Credits & discounts</td><td class="num neg">${moneyShort(c.totals.discounts)}</td><td></td><td></td></tr>
+            <tr class="totals-row"><td colspan="2">Total amount due</td><td class="num">${moneyShort(c.totals.total)}</td><td class="num">100%</td><td></td></tr>
+          </tbody>
+        </table>
+      </div>
+      ${c.discrepancy?`<div class="status-strip warn" style="margin-top:10px">${IC.warn}<span><b>Detected fact:</b> stated total ${money(c.discrepancy.declared)} ≠ line-item sum ${money(c.discrepancy.computed)}. The difference (${money(c.discrepancy.declared-c.discrepancy.computed)}) may indicate a missing line or rounding — see Action Center.</span></div>`:""}
+      <button class="btn btn-ghost btn-sm raw-toggle" id="rawToggle" aria-expanded="false">Show original bill text ▾</button>
+      <pre class="raw-box" id="rawBox">${esc(c.rawText)}</pre>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <h3 class="card-title">Where the money goes</h3>
+        ${donutHTML(c)}
+      </div>
+      <div class="card">
+        <h3 class="card-title">Category totals</h3>
+        <div class="hist-detail" style="margin-top:0">
+          ${gross.map(([k,v])=>`<div class="hd-card"><div class="hd-label" style="display:flex;align-items:center;gap:6px">${catIcon(k,12)} ${CATS[k].label}</div><div class="hd-value">${money(v)}</div><div class="stat-note">${Math.round(v/total*100)}% of total</div></div>`).join("")}
+          ${disc>0?`<div class="hd-card"><div class="hd-label" style="display:flex;align-items:center;gap:6px">${catIcon("discount",12)} Discounts</div><div class="hd-value neg">${money(-disc)}</div><div class="stat-note">reduces your total</div></div>`:""}
+        </div>
+        <p style="font-size:11.5px;color:var(--faint);margin:12px 0 0">Categories are assigned by transparent keyword rules (e.g. “tax”, “fee”, “rental”) — inspectable in the source, not a black box.</p>
+      </div>
+    </div>
+  </div>`;
+}
+function wireBreakdown(c){
+  const btn=$("#rawToggle"), box=$("#rawBox");
+  if (btn&&box) btn.addEventListener("click",()=>{
+    const open=box.classList.toggle("open");
+    btn.setAttribute("aria-expanded",open);
+    btn.textContent=open?"Hide original bill text ▴":"Show original bill text ▾";
+  });
+}
+function panelChanges(c){
+  const rows=whatChangedBullets(c);
+  const hc=headlineChange(c);
+  const inc=rows.filter(r=>!r.gone&&r.delta>0), dec=rows.filter(r=>r.delta<0&&!r.gone), fresh=rows.filter(r=>r.fresh), gone=rows.filter(r=>r.gone);
+  const chip=(r)=>`<li>
+    <span class="cl-name"><span class="t">${esc(r.name)}</span>${r.fresh?'<span class="tag-new">new</span>':r.gone?'<span class="tag-gone">removed</span>':""}</span>
+    <span>${r.pct!=null&&!r.fresh&&!r.gone?`<span class="pct-cell" style="margin-right:8px">${pctFmt(r.pct)}</span>`:""}<span class="${(r.gone?-r.delta:r.delta)>0?"delta-up":"delta-down"}">${(r.gone?-r.delta:r.delta)>0?"+":""}${money(r.gone?-r.delta:r.delta)}</span></span>
+  </li>`;
+  const group=(title,list,note)=>`<div class="card"><h3 class="card-title">${title}</h3>
+    ${list.length?`<ul class="change-list">${list.map(chip).join("")}</ul>`:`<p style="color:var(--faint);font-size:13px;margin:0">${note}</p>`}</div>`;
+  return `
+  <div class="change-summary" style="margin-bottom:16px">
+    <span style="flex:none;color:var(--primary)">${IC.info}</span>
+    <div><b>Bottom line:</b> ${esc(hc.sum)}</div>
+  </div>
+  <div class="grid split-2">
+    ${group(`Increased charges (${inc.length})`,inc,"Nothing increased compared with last cycle.")}
+    ${group(`Decreased charges (${dec.length})`,dec,"Nothing decreased compared with last cycle.")}
+    ${group(`New this cycle (${fresh.length})`,fresh,"No brand-new charges this cycle.")}
+    ${group(`Removed since ${plabel(c)} (${gone.length})`,gone,"No charges disappeared this cycle.")}
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3 class="card-title">Side-by-side totals</h3>
+    <div class="hist-detail" style="margin-top:0">
+      <div class="hd-card"><div class="hd-label">${plabel(c)} total</div><div class="hd-value">${money(c.prevTotal)}</div></div>
+      <div class="hd-card"><div class="hd-label">This bill total</div><div class="hd-value">${money(c.totals.total)}</div></div>
+      <div class="hd-card"><div class="hd-label">Difference</div><div class="hd-value" style="color:${hc.diff>0?"var(--bad)":"var(--good)"}">${hc.diff>0?"+":""}${money(hc.diff)}</div></div>
+      <div class="hd-card"><div class="hd-label">Change</div><div class="hd-value">${pctFmt(hc.diff/c.prevTotal*100)}</div></div>
+    </div>
+    <p style="font-size:11.5px;color:var(--faint);margin:12px 0 0">Comparison baseline: the fictional “${plabel(c)}” statement in the built-in sample history (see History tab).</p>
+  </div>`;
+}
+function panelFlags(c){
+  const list=c.anomalies;
+  if (!list.length) return `<div class="card"><div class="empty-state"><div class="es-icon">${IC.check}</div><b style="font-size:15px">Nothing unusual detected</b><p style="margin:6px 0 0;font-size:13px">Every line matches expectations from previous cycles within our thresholds (±25% movement, no new fees, no duplicates).</p></div></div>`;
+  const sev={high:'<span class="badge up">High</span>',medium:'<span class="badge warn">Medium</span>',low:'<span class="badge neutral">Low</span>'};
+  return `
+  <div class="change-summary" style="margin-bottom:14px;border-left-color:var(--amber)">
+    <span style="flex:none;color:var(--amber)">${IC.warn}</span>
+    <div><b>How this works:</b> these findings come from simple, transparent rules run on your own text — percentage jumps, charges that appear/disappear between cycles, repeated lines, and usage outliers. They are <span class="badge suggest" style="margin:0 2px">suggestions</span>, not confirmed errors.</div>
+  </div>
+  ${list.map(a=>`
+  <div class="anomaly ${a.level}">
+    <div class="an-head">
+      <span style="width:26px;height:26px;border-radius:8px;display:grid;place-items:center;flex:none;background:${a.good?"var(--good-soft)":a.level==="high"?"var(--bad-soft)":"var(--warn-soft)"};color:${a.good?"var(--good)":a.level==="high"?"var(--bad)":"var(--warn)"}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ANOMALY_TYPES[a.type].icon}</svg>
+      </span>
+      <div><div class="an-type">${ANOMALY_TYPES[a.type].label}</div><div class="an-title">${esc(a.title)}</div></div>
+      <span class="sev">${a.good?'<span class="badge down">Good news</span>':sev[a.level]}</span>
+    </div>
+    <div class="an-body"><span class="why"><b>Why it was flagged:</b> ${esc(a.why)}</span></div>
+    <ul class="an-facts">${a.facts.map(f=>`<li><span class="badge fact" style="padding:0 5px;font-size:9.5px;margin-right:4px">FACT</span>${esc(f)}</li>`).join("")}</ul>
+    <div class="an-suggest"><b>Suggested action:</b> ${esc(a.action)} <span class="badge suggest" style="margin-left:6px">suggestion</span></div>
+  </div>`).join("")}`;
+}
+function panelActions(c){
+  const done=c.checklist.filter(i=>i.done).length;
+  const groups=[["deadline","Payment deadline"],["verify","Charges worth verifying"],["questions","Questions to ask the provider"],["savings","Discounts & savings opportunities"],["next","Suggested next steps"]];
+  const tagCls={Deadline:"info",Verify:"warn",Question:"fact",Savings:"down","Next step":"neutral"};
+  return `
+  <div class="card">
+    <h3 class="card-title">Action Center — ${c.checklist.length} items generated from this analysis</h3>
+    <div class="check-progress">
+      <div class="bar-track"><div class="bar-fill" id="ckFill" style="width:${done/c.checklist.length*100}%"></div></div>
+      <span class="mono" style="font-size:12.5px;font-weight:700" id="ckCount">${done}/${c.checklist.length} done</span>
+    </div>
+    ${groups.map(([g,label])=>{
+      const items=c.checklist.filter(i=>i.group===g);
+      if (!items.length) return "";
+      return `<div class="check-group"><h4>${label}<span class="count" data-gcount="${g}">${items.filter(i=>i.done).length}/${items.length}</span></h4>
+        ${items.map(i=>`
+        <label class="check-item ${i.done?"done":""}" data-id="${i.id}">
+          <input type="checkbox" ${i.done?"checked":""} aria-label="${esc(i.text)}"/>
+          <span class="ci-text"><span class="ci-meta"><span class="badge ${tagCls[i.tag]||"neutral"}" style="font-size:10px;padding:1px 7px">${i.tag}</span></span>${esc(i.text)}</span>
+        </label>`).join("")}</div>`;
+    }).join("")}
+    <div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn btn-secondary btn-sm" id="ckReset">Reset checklist</button>
+      <button class="btn btn-secondary btn-sm" id="ckCopy">${IC.copy} Copy checklist</button>
+    </div>
+  </div>`;
+}
+function wireActions(c){
+  $$(".check-item input").forEach(inp=>{
+    inp.addEventListener("change",()=>{
+      const item=c.checklist.find(i=>i.id===inp.closest(".check-item").dataset.id);
+      if (!item) return;
+      item.done=inp.checked;
+      inp.closest(".check-item").classList.toggle("done",item.done);
+      const done=c.checklist.filter(i=>i.done).length;
+      $("#ckFill").style.width=(done/c.checklist.length*100)+"%";
+      $("#ckCount").textContent=`${done}/${c.checklist.length} done`;
+      const g=item.group, gi=c.checklist.filter(i=>i.group===g);
+      const gc=document.querySelector(`[data-gcount="${g}"]`);
+      if (gc) gc.textContent=`${gi.filter(i=>i.done).length}/${gi.length}`;
+      saveState(); updateDashActCount();
+      if (done===c.checklist.length) toast("All action items complete — nice work! 🎉","success");
+    });
+  });
+  $("#ckReset").addEventListener("click",()=>{
+    c.checklist.forEach(i=>i.done=false); saveState(); renderTabPanel(); toast("Checklist reset","info");
+  });
+  $("#ckCopy").addEventListener("click",async()=>{
+    const txt=summaryText(c,{checklistOnly:true});
+    const ok=await copyText(txt); toast(ok?"Checklist copied to clipboard":"Copy failed — clipboard blocked by browser",ok?"success":"error");
+  });
+}
+
+/* ---- HISTORY ---- */
+function renderHistory(){
+  const host=$("#historyBody");
+  const histProvider=(state.current&&state.current.provider.name)||"Northlight Electric";
+  const months=[...HISTORY,{label:"Current",isCurrent:true}];
+  const sel = state.selectedMonth==="Current" && state.current ? {label:"Current",isCurrent:true,totals:state.current.totals,items:state.current.lines,usage:state.current.usage?state.current.usage.qty:null,provider:state.current.provider.name,usageVal:state.current.usage?state.current.usage.qty:null,unit:(state.current.usage&&state.current.usage.unit)||"kWh"} : (HISTORY.find(h=>h.label===state.selectedMonth)||PREVIOUS);
+  const idx = months.findIndex(m=>m.label===sel.label);
+  const prevM = idx>0?months[idx-1]:null;
+  const series=months.map(m=>m.totals.total);
+  const maxT=Math.max(...series), minT=Math.min(...series);
+  /* sparkline */
+  const W=520,H=150,P=26;
+  const pts=series.map((v,i)=>[P+i*(W-2*P)/(series.length-1), H-P-((v-minT)/(maxT-minT||1))*(H-2*P)]);
+  const path=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1)).join(" ");
+  const area=path+` L${pts[pts.length-1][0]} ${H-P} L${pts[0][0]} ${H-P} Z`;
+  const catOf=(items,k)=>items.filter(i=>i.category===k).reduce((a,i)=>a+i.value,0);
+  const catRows=["usage","recurring","equipment","taxes","fees","discount"].map(k=>{
+    const now=catOf(sel.items,k), before=prevM?catOf(prevM.items,k):null;
+    const d=before!=null?now-before:null;
+    return {k,now,before,d};
+  }).filter(r=>r.now!==0||(r.before&&r.before!==0));
+  host.innerHTML=`
+  <div class="grid dash-grid">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:4px"><h3 class="card-title" style="margin:0">Monthly totals — ${esc(histProvider)} (sample account)</h3><button class="btn btn-secondary btn-sm" id="histAnalyzeBtn">Analyze a new bill</button></div>
+      <svg class="spark" viewBox="0 0 ${W} ${H}" role="img" aria-label="Line chart of monthly bill totals">
+        <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0e5fe4" stop-opacity=".14"/><stop offset="1" stop-color="#0e5fe4" stop-opacity="0"/></linearGradient></defs>
+        ${[0,1,2,3].map(i=>`<line x1="${P}" x2="${W-P}" y1="${P+i*(H-2*P)/3}" y2="${P+i*(H-2*P)/3}" stroke="#eef1f6" stroke-width="1"/>`).join("")}
+        <path d="${area}" fill="url(#sg)"/>
+        <path d="${path}" fill="none" stroke="#0e5fe4" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        ${pts.map((p,i)=>`<g style="cursor:pointer" onclick="void 0">
+          <circle cx="${p[0]}" cy="${p[1]}" r="${months[i].label===sel.label?5.5:4}" fill="${months[i].label===sel.label?"#0e5fe4":"#fff"}" stroke="#0e5fe4" stroke-width="2.2" data-pt="${months[i].label}"/>
+          <text x="${p[0]}" y="${H-6}" text-anchor="middle" font-size="10.5" fill="${months[i].label===sel.label?"#0f172a":"#8b98aa"}" font-weight="${months[i].label===sel.label?700:500}">${esc(months[i].label.split(" ")[0])}</text>
+          <text x="${p[0]}" y="${p[1]-11}" text-anchor="middle" font-size="10" fill="#5b6b7f" font-weight="600">${Math.round(series[i])}</text>
+        </g>`).join("")}
+      </svg>
+      <div class="table-wrap" style="margin-top:6px">
+        <table class="lines hist-table">
+          <thead><tr><th>Month</th><th class="num">Total</th><th class="num">Usage (kWh)</th><th class="num">Taxes & fees</th><th class="num">Δ vs prior</th><th>Status</th></tr></thead>
+          <tbody>
+          ${months.map((m,i)=>{
+            const p=i>0?months[i-1]:null;
+            const d=p?m.totals.total-p.totals.total:null;
+            const taxFees=m.items.filter(x=>["taxes","fees","equipment"].includes(x.category)).reduce((a,x)=>a+x.value,0);
+            const isSel=m.label===sel.label;
+            const status=d==null?'<span class="badge neutral">baseline</span>':d>8?'<span class="badge up">jump</span>':d<-8?'<span class="badge down">drop</span>':'<span class="badge flat">steady</span>';
+            return `<tr class="hist-row ${isSel?"selected":""}" data-month="${esc(m.label)}" tabindex="0" role="button" aria-pressed="${isSel}">
+              <td>${esc(m.label)}${m.isCurrent?' <span class="tag-new">current</span>':""}</td>
+              <td class="num">${money(m.totals.total)}</td>
+              <td class="num">${m.usageVal?m.usageVal.toLocaleString():"—"}</td>
+              <td class="num">${money(taxFees)}</td>
+              <td class="num ${d>0?"delta-up":d<0?"delta-down":""}">${d==null?"—":(d>0?"+":"")+money(d)}</td>
+              <td>${status}</td>
+            </tr>`;
+          }).join("")}
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:11.5px;color:var(--faint);margin:10px 0 0">Click any row or point label to inspect that month. History is fictional sample data for this demo account.</p>
+    </div>
+    <div class="card" style="align-self:start">
+      <h3 class="card-title">${esc(sel.label)} details</h3>
+      <div class="hist-detail" style="grid-template-columns:1fr 1fr;margin-top:0">
+        <div class="hd-card"><div class="hd-label">Total</div><div class="hd-value">${money(sel.totals.total)}</div>${prevM?`<div class="stat-note">${pctFmt((sel.totals.total-prevM.totals.total)/prevM.totals.total*100)} vs ${prevM.label}</div>`:""}</div>
+        <div class="hd-card"><div class="hd-label">Avg cost per unit</div><div class="hd-value">$${(sel.totals.total/(sel.usageVal||1)).toFixed(3)}</div><div class="stat-note">${sel.usageVal?sel.usageVal.toLocaleString()+" "+(sel.unit||"kWh")+" recorded":"usage not tracked"}</div></div>
+      </div>
+      <h4 style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:16px 0 8px">Category movement ${prevM?`(vs ${prevM.label})`:""}</h4>
+      <ul class="legend">
+        ${catRows.map(r=>`<li>
+          <span class="cat-dot" style="background:${CATS[r.k].color}"></span>
+          <span class="lg-name">${CATS[r.k].label}</span>
+          <span class="lg-amt">${money(r.now)}</span>
+          ${r.d!=null&&Math.abs(r.d)>=0.01?`<span class="${r.d>0?"delta-up":"delta-down"}" style="font-size:12px;width:76px;text-align:right">${r.d>0?"+":""}${money(r.d)}</span>`:`<span style="width:76px;text-align:right;font-size:12px;color:var(--faint)">—</span>`}
+        </li>`).join("")}
+      </ul>
+      <h4 style="font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:16px 0 8px">Lines in ${esc(sel.label)}</h4>
+      <ul class="legend">
+        ${sel.items.map(i=>`<li><span class="lg-name" style="font-weight:500">${esc(i.name)}</span><span class="lg-amt ${i.value<0?"neg":""}">${money(i.value)}</span></li>`).join("")}
+      </ul>
+      ${sel.isCurrent?`<button class="btn btn-secondary" style="width:100%;margin-top:12px" id="histGoDash">Open current bill dashboard →</button>`:""}
+    </div>
+  </div>`;
+  $$(".hist-row").forEach(r=>{
+    const go=()=>{ state.selectedMonth=r.dataset.month; saveState?.(); renderHistory(); };
+    r.addEventListener("click",go);
+    r.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); go(); }});
+  });
+  $$("[data-pt]").forEach(pt=>pt.closest("g").addEventListener("click",()=>{ state.selectedMonth=pt.getAttribute("data-pt"); renderHistory(); }));
+  const gd=$("#histGoDash"); if (gd) gd.addEventListener("click",()=>setView("dashboard"));
+  const ha=$("#histAnalyzeBtn"); if (ha) ha.addEventListener("click",()=>setView("analyze"));
+}
+
+/* ---- copy summary ---- */
+function summaryText(c,opts={}){
+  const hc=headlineChange(c);
+  const L=[];
+  if (opts.checklistOnly){
+    L.push(`ACTION CHECKLIST — ${c.provider.name} (${c.meta.period||""})`);
+    L.push("Generated by BillLens AI (local rule-based analysis)");
+    L.push("".padEnd(52,"="));
+    c.checklist.forEach(i=>L.push(`[${i.done?"x":" "}] ${i.text}`));
+    const done=c.checklist.filter(i=>i.done).length;
+    L.push("",`${done}/${c.checklist.length} complete`);
+    return L.join("\n");
+  }
+  L.push(`BILL SUMMARY — ${c.provider.name.toUpperCase()} (${c.provider.type})`);
+  L.push("Generated by BillLens AI · local rule-based analysis · fictional demo data");
+  L.push("".padEnd(62,"="));
+  L.push(`Period:        ${c.meta.period||fmtDate(c.dates.periodStart)+" – "+fmtDate(c.dates.periodEnd)}`);
+  L.push(`Statement:     ${fmtDate(c.dates.statementDate)}`);
+  L.push(`Due date:      ${fmtDate(c.dates.dueDate)} (${daysUntil(c.dates.dueDate)} days)`);
+  L.push(`Account:       ${c.meta.account?maskAcct(c.meta.account):"—"}`);
+  L.push("");
+  L.push(`TOTAL DUE:     ${money(c.totals.total)}   (${pctFmt(hc.diff/c.prevTotal*100)} vs ${plabel(c)}: ${money(c.prevTotal)})`);
+  L.push(`  Subtotal:    ${money(c.totals.subtotal)}`);
+  L.push(`  Taxes:       ${money(c.totals.taxes)}`);
+  L.push(`  Fees/equip:  ${money(c.totals.fees)}`);
+  L.push(`  Discounts:   ${money(c.totals.discounts)}`);
+  L.push("");
+  L.push("WHAT CHANGED");
+  L.push(hc.sum);
+  whatChangedBullets(c).slice(0,5).forEach(r=>L.push(` • ${r.name}: ${r.fresh?"NEW":r.gone?"REMOVED":"changed"} ${(r.gone?-r.delta:r.delta)>0?"+":""}${money(r.gone?-r.delta:r.delta)}`));
+  L.push("");
+  L.push("LINE ITEMS");
+  c.lines.forEach(l=>L.push(` • ${l.name.padEnd(42," ").slice(0,42)} ${money(l.value).padStart(9)}`));
+  L.push("");
+  L.push("WORTH CHECKING");
+  if (!c.anomalies.length) L.push(" • Nothing unusual detected.");
+  c.anomalies.forEach(a=>L.push(` • [${a.level.toUpperCase()}] ${a.title}\n     Why: ${a.why}\n     Suggested: ${a.action}`));
+  L.push("");
+  L.push("ACTION ITEMS");
+  c.checklist.forEach(i=>L.push(` [${i.done?"x":" "}] ${i.text}`));
+  L.push("");
+  L.push("-".repeat(62));
+  L.push("BillLens AI is a demo: analysis ran locally in the browser. No bank or");
+  L.push("provider access. Findings are rule-based suggestions, not certainties.");
+  return L.join("\n");
+}
+async function copySummary(c){
+  const ok=await copyText(summaryText(c));
+  toast(ok?"Summary copied — ready to paste anywhere":"Copy failed — clipboard blocked by browser",ok?"success":"error");
+}
+
+/* ---- print report ---- */
+function printReport(){
+  const c=state.current; if(!c){ toast("Analyze a bill first","error"); return; }
+  const hc=headlineChange(c);
+  $("#printReport").innerHTML=`
+  <h1>BillLens AI — Bill Report</h1>
+  <div class="pr-meta">${esc(c.provider.name)} (${esc(c.provider.type)}) · ${esc(c.meta.period||"")} · Generated ${fmtDate(new Date())} · Fictional demo data</div>
+  <section><h2>Totals</h2>
+    <table><tr><th>Total due</th><th>Previous (${plabel(c)})</th><th>Change</th><th>Subtotal</th><th>Taxes</th><th>Fees & equipment</th><th>Discounts</th></tr>
+    <tr><td><b>${money(c.totals.total)}</b></td><td>${money(c.prevTotal)}</td><td>${pctFmt(hc.diff/c.prevTotal*100)} (${hc.diff>0?"+":""}${money(hc.diff)})</td><td>${money(c.totals.subtotal)}</td><td>${money(c.totals.taxes)}</td><td>${money(c.totals.fees)}</td><td>${money(c.totals.discounts)}</td></tr></table>
+    <p><b>Due date:</b> ${fmtDate(c.dates.dueDate)}</p>
+  </section>
+  <section><h2>What changed</h2><p>${esc(hc.sum)}</p><ul>${whatChangedBullets(c).slice(0,6).map(r=>`<li>${esc(r.name)} — ${r.fresh?"new":r.gone?"removed":"changed"} ${(r.gone?-r.delta:r.delta)>0?"+":""}${money(r.gone?-r.delta:r.delta)}</li>`).join("")}</ul></section>
+  <section><h2>Line items</h2>
+    <table><tr><th>Description</th><th>Category</th><th style="text-align:right">Amount</th><th style="text-align:right">% of total</th></tr>
+    ${c.lines.map(l=>`<tr><td>${esc(l.name)}</td><td>${CATS[l.category].label}</td><td class="num">${money(l.value)}</td><td class="num">${(l.value/c.totals.total*100).toFixed(1)}%</td></tr>`).join("")}
+    <tr><td colspan="2"><b>Total</b></td><td class="num"><b>${money(c.totals.total)}</b></td><td class="num"><b>100%</b></td></tr></table>
+  </section>
+  <section><h2>Worth checking</h2><ul>${c.anomalies.map(a=>`<li><b>[${a.level}] ${esc(a.title)}</b> — ${esc(a.why)} <i>Suggested: ${esc(a.action)}</i></li>`).join("")||"<li>Nothing unusual detected.</li>"}</ul></section>
+  <section><h2>Action checklist</h2><ul>${c.checklist.map(i=>`<li>[${i.done?"x":" "}] ${esc(i.text)}</li>`).join("")}</ul></section>
+  <div class="pr-foot">BillLens AI demo — all analysis performed locally in the browser using transparent rules. No bank or provider access. Facts are extracted from the pasted text; recommendations are suggestions only.</div>`;
+  window.print();
+}
+
+/* ---------------------------- navigation ---------------------------- */
+function setView(v){
+  state.view=v;
+  $$(".nav-item").forEach(b=>{ const on=b.dataset.view===v; b.classList.toggle("active",on); if(on)b.setAttribute("aria-current","page"); else b.removeAttribute("aria-current"); });
+  $$(".view").forEach(x=>x.classList.remove("active"));
+  $("#view-"+v).classList.add("active");
+  if (v==="history") renderHistory();
+  if (v==="analyze") renderAnalyze();
+  if (v==="dashboard") renderDashboard();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ------------------------------- boot ------------------------------- */
+function boot(){
+  loadState();
+  $$(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+  $("#navAnalyzeBtn").addEventListener("click",()=>setView("analyze"));
+  $("#dashAnalyzeBtn").addEventListener("click",()=>setView("analyze"));
+  $("#dashCopyBtn").addEventListener("click",()=>{ if(state.current) copySummary(state.current); else toast("Analyze a bill first — try the sample.","info"); });
+  $("#dashPrintBtn").addEventListener("click",()=>{ if(state.current) printReport(); else toast("Analyze a bill first — try the sample.","info"); });
+  $("#histBackToDash").addEventListener("click",()=>setView("dashboard"));
+  $("#privacyPill").addEventListener("click",openPrivacy);
+  $("#footPrivacy").addEventListener("click",e=>{ e.preventDefault(); openPrivacy(); });
+  $("#brandLink").addEventListener("click",e=>{ e.preventDefault(); setView("dashboard"); });
+  renderDashboard();
+  renderAnalyze();
+}
+document.addEventListener("DOMContentLoaded",boot);
+if (document.readyState!=="loading") boot();
+
+})();
+</script>
+</body>
+</html>
